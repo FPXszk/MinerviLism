@@ -9,6 +9,7 @@ from pathlib import Path
 from loguru import logger
 import argparse
 import sys
+from datetime import datetime
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -67,6 +68,11 @@ def run_backtest_mode(config: dict, tickers: list, args):
 
     use_benchmark = not args.no_benchmark
 
+    # Generate timestamped output directory
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    output_dir = Path(__file__).parent / "output" / "backtest" / f"backtest_{start_date}_to_{end_date}_{timestamp}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     # ========== STAGE2 RESULT CONNECTION ==========
     # CRITICAL: Load Stage2 screening results if available
     # Without this, backtest runs on ALL tickers (ignoring Stage2 filter)
@@ -108,7 +114,7 @@ def run_backtest_mode(config: dict, tickers: list, args):
     logger.info(f"Benchmark: {'Enabled' if use_benchmark else 'Disabled'}")
 
     # Initialize and run backtest engine
-    engine = BacktestEngine(config, use_benchmark=use_benchmark)
+    engine = BacktestEngine(config, use_benchmark=use_benchmark, output_dir=output_dir)
     result = engine.run(tickers, start_date, end_date)
 
     # Print report
@@ -125,17 +131,13 @@ def run_backtest_mode(config: dict, tickers: list, args):
         print(f"CAGR:                 {cagr:.1%}")
 
     # Visualize results
-    output_dir = Path(__file__).parent / "output" / "backtest"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     if VISUALIZATION_AVAILABLE:
-        try:
-            visualize_backtest_results(result, output_dir)
-            logger.info(f"Charts saved to: {output_dir}")
-        except Exception as e:
-            logger.warning(f"Could not generate charts: {e}")
-    else:
-        logger.warning("matplotlib not available, skipping chart generation")
+        visualize_backtest_results(result, output_dir=output_dir, show_plots=not args.no_charts)
+        logger.info("Visualization charts generated.")
+
+    # Save results in the timestamped output directory
+    engine.set_output_directory(output_dir)
+    logger.info(f"Results saved to: {output_dir}")
 
     # Save trade details
     if result.trades:

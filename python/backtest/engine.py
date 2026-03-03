@@ -82,13 +82,14 @@ class BacktestResult:
 class BacktestEngine:
     """Backtesting engine for the screening strategy"""
 
-    def __init__(self, config: Dict, use_benchmark: bool = True):
+    def __init__(self, config: Dict, use_benchmark: bool = True, output_dir: Optional[str] = None):
         """
         Initialize the backtest engine.
 
         Args:
             config: Configuration dictionary
             use_benchmark: Whether to use SPY benchmark for RS calculation
+            output_dir: Optional output directory for backtest results
         """
         self.config = config
         self.use_benchmark = use_benchmark
@@ -119,10 +120,11 @@ class BacktestEngine:
         self.commission = config['backtest']['commission']
         self.risk_per_trade = config['risk']['risk_per_trade']
 
-        # Initialize TradeLogger for trade action logging (Task 2)
-        # CRITICAL: Use output/backtest/ subdirectory for trade logs
-        # This ensures consistency with chart generation which expects files here
-        backtest_output_dir = Path(__file__).parent.parent / 'output' / 'backtest'
+        # Set output directory for trade logs
+        if output_dir:
+            backtest_output_dir = Path(output_dir)
+        else:
+            backtest_output_dir = Path(__file__).parent.parent / 'output' / 'backtest'
         self.trade_logger = TradeLogger(output_dir=str(backtest_output_dir))
 
         # Diagnostics with separate Stage2 and Entry tracking
@@ -153,6 +155,16 @@ class BacktestEngine:
             'data_fetch_success_count': 0,
             'data_fetch_filtered_count': 0
         }
+
+    def set_output_directory(self, output_dir: str):
+        """
+        Set the output directory for backtest results.
+
+        Args:
+            output_dir: Path to the output directory
+        """
+        self.trade_logger.output_dir = output_dir
+        logger.info(f"Output directory set to: {output_dir}")
 
     def run(
         self,
