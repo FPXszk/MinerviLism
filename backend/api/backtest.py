@@ -8,6 +8,7 @@ Provides REST API for:
 """
 import os
 from typing import Dict, List, Optional
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -17,6 +18,9 @@ from services.result_loader import (
     load_trade_log,
     load_ticker_stats,
     get_top_bottom_tickers,
+    get_chart_as_base64,
+    list_available_backtests,
+    load_backtest_summary,
 )
 
 router = APIRouter(prefix="/api/backtest", tags=["backtest"])
@@ -42,6 +46,16 @@ class BacktestResponse(BaseModel):
 
     status: str
     message: str
+
+
+class BacktestResultsResponse(BaseModel):
+    """Response model for backtest results."""
+
+    timestamp: str
+    summary: Dict
+    trades: List[Dict]
+    ticker_stats: List[Dict]
+    charts: Dict[str, Optional[str]]  # chart_name -> base64_image
 
 
 def run_backtest_task(start_date: str, end_date: str) -> Dict:
@@ -131,3 +145,89 @@ def get_results():
 def get_tickers():
     """Get top 5 and bottom 5 tickers by P&L."""
     return load_top_bottom_tickers()
+
+
+@router.get("/list")
+def list_backtests():
+    """List all available backtest results."""
+    output_dir = DEFAULT_OUTPUT_DIR
+    backtests = list_available_backtests(output_dir)
+    return {"backtests": backtests}
+
+
+@router.get("/latest")
+def get_latest_results() -> BacktestResultsResponse:
+    """Get the latest backtest results."""
+    output_dir = DEFAULT_OUTPUT_DIR
+    
+    # Find the latest backtest directory
+    if not os.path.exists(output_dir):
+        raise HTTPException(status_code=404, detail="No backtest results found")
+    
+    try:
+        dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
+        if not dirs:
+            raise HTTPException(status_code=404, detail="No backtest results found")
+        
+        latest_dir = dirs[0]
+        return _get_backtest_results_by_dir(os.path.join(output_dir, latest_dir), latest_dir)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get latest results: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/results/{timestamp}")
+def get_results_by_timestamp(timestamp: str) -> BacktestResultsResponse:
+    """Get backtest results for a specific timestamp."""
+    output_dir = DEFAULT_OUTPUT_DIR
+    
+    # Find directory matching timestamp pattern
+    try:
+        matching_dirs = [d for d in os.listdir(output_dir) if timestamp in d]
+        if not matching_dirs:
+            raise HTTPException(status_code=404, detail=f"No backtest results found for timestamp: {timestamp}")
+        
+        dir_name = matching_dirs[0]
+        return _get_backtest_results_by_dir(os.path.join(output_dir, dir_name), dir_name)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get results for timestamp {timestamp}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResultsResponse:
+    """Helper function to load backtest results from a directory."""
+    if not os.path.exists(result_dir):
+        raise HTTPException(status_code=404, detail=f"Backtest directory not found: {dir_name}")
+    
+    # Load summary metrics
+    summary = load_backtest_summary(result_dir)
+    
+    # Load trade data
+    trades_path = os.path.join(result_dir, "trades.csv")
+    trades = load_trade_log(trades_path)
+    
+    # Load ticker statistics
+    ticker_stats_path = os.path.join(result_dir, "ticker_stats.csv")
+    ticker_stats = load_ticker_stats(ticker_stats_path)
+    
+    # Load charts as base64
+    charts = {}
+    charts_dir = os.path.join(result_dir, "charts")
+    if os.path.exists(charts_dir):
+        for chart_file in sorted(os.listdir(charts_dir)):
+            if chart_file.endswith(".png"):
+                chart_path = os.path.join(charts_dir, chart_file)
+                chart_key = chart_file.replace(".png", "")
+                charts[chart_key] = get_chart_as_base64(chart_path)
+    
+    return BacktestResultsResponse(
+        timestamp=dir_name,
+        summary=summary,
+        trades=trades,
+        ticker_stats=ticker_stats,
+        charts=charts,
+    )

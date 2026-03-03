@@ -3,6 +3,92 @@ Invest プロジェクト コマンド一覧
 
 ---
 
+# Backtest Dashboard (Web UI)
+
+## 🚀 開発環境での起動
+複数のターミナルを開いて以下を実行してください（順番は関係ありません）
+
+### ターミナル1：バックエンドAPI起動
+```powershell
+cd C:\00_mycode\Invest\python
+.\.venv\Scripts\Activate.ps1
+cd C:\00_mycode\Invest\backend
+python -m uvicorn app:app --reload --port 8000
+```
+- API サーバーは http://localhost:8000 で起動します
+- ホットリロード対応
+
+### ターミナル2：フロントエンド開発サーバー起動
+```powershell
+cd C:\00_mycode\Invest\frontend
+npm run dev
+```
+- React アプリは http://localhost:3000 で起動します
+- ホットリロード対応
+
+## 🌐 ブラウザでアクセス
+```
+http://localhost:3000/dashboard
+```
+
+## 🧪 API エンドポイントテスト
+```powershell
+# 最新のバックテスト結果を取得
+curl http://localhost:8000/api/backtest/latest
+
+# 利用可能なバックテスト一覧を取得
+curl http://localhost:8000/api/backtest/list
+
+# 特定のタイムスタンプの結果を取得
+curl http://localhost:8000/api/backtest/results/20260303-221229
+```
+
+## 📊 ダッシュボード機能
+- **サイドバー**: バックテスト実行履歴の一覧表示
+- **Summary タブ**: 統計情報（勝率、損益、シャープレシオなど）
+- **Charts タブ**: 上位5銘柄・下位5銘柄のチャート表示（クリックで拡大）
+- **Trades タブ**: 全トレード詳細テーブル（ソート・ページネーション対応）
+
+## 🐛 デバッグ・トラブルシューティング
+
+### ブラウザ開発者ツール
+```
+http://localhost:3000/dashboard で F12 キーを押す
+- Console タブで JavaScript エラーを確認
+- Network タブで API リクエスト/レスポンスを確認
+```
+
+### API ステータス確認
+```powershell
+# バックエンドが起動しているか確認
+curl http://localhost:8000/health
+
+# 特定の API エンドポイントが動作しているか確認
+curl -i http://localhost:8000/api/backtest/list
+```
+
+### フロントエンドログ確認
+ターミナル2（npm run dev）を見て、以下のようなエラーがないか確認：
+```
+[VITE] error: ...
+```
+
+### キャッシュのクリア
+```powershell
+# Python キャッシュ削除
+cd python
+Remove-Item -Recurse __pycache__
+Remove-Item -Recurse .pytest_cache
+
+# Node.js キャッシュ削除
+cd frontend
+npm cache clean --force
+Remove-Item -Recurse node_modules
+npm install
+```
+
+---
+
 # Electron / Frontend 関連
 
 ## 開発起動

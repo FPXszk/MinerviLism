@@ -1,0 +1,68 @@
+/**
+ * Main App Styles
+ */
+
+.app-nav {
+  background: white;
+  border-bottom: 1px solid #ddd;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nav-brand a {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0066cc;
+  text-decoration: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-brand a:hover {
+  color: #0052a3;
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.nav-link {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: #0066cc;
+}
+
+.app-main {
+  min-height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .app-nav {
+    padding: 0 15px;
+  }
+
+  .nav-links {
+    gap: 15px;
+  }
+
+  .nav-brand a {
+    font-size: 16px;
+  }
+
+  .nav-link {
+    font-size: 13px;
+  }
+}

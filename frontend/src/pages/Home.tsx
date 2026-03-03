@@ -4,6 +4,7 @@
  * Main page with backtest form and top/bottom ticker lists.
  */
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { BacktestForm } from '../components/BacktestForm'
 import { TickerList, TickerItem } from '../components/TickerList'
 import { runBacktest, getTopBottomTickers } from '../api/client'
@@ -43,6 +44,13 @@ export function Home({ onNavigateToChart }: HomeProps) {
       setMessage('Backtest failed. Please try again.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleTickerClick = (ticker: string) => {
+    // Support both old prop-based and new router-based navigation
+    if (onNavigateToChart) {
+      onNavigateToChart(ticker)
     }
   }
 
