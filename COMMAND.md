@@ -20,6 +20,8 @@ python -m uvicorn app:app --reload --port 8000
 
 ### ターミナル2：フロントエンド開発サーバー起動
 ```powershell
+cd C:\00_mycode\Invest\python
+.\.venv\Scripts\Activate.ps1
 cd C:\00_mycode\Invest\frontend
 npm run dev
 ```

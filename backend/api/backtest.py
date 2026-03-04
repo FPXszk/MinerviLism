@@ -93,6 +93,19 @@ def load_results(output_dir: Optional[str] = None) -> Dict:
     trade_log_path = os.path.join(output_dir, "trade_log.csv")
     ticker_stats_path = os.path.join(output_dir, "ticker_stats.csv")
 
+    # If files are not present directly under output_dir, try the latest
+    # backtest_* subdirectory (this matches how backtests are saved).
+    if not (os.path.exists(trade_log_path) or os.path.exists(ticker_stats_path)):
+        try:
+            dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
+            if dirs:
+                latest = dirs[0]
+                trade_log_path = os.path.join(output_dir, latest, "trade_log.csv")
+                ticker_stats_path = os.path.join(output_dir, latest, "ticker_stats.csv")
+        except Exception:
+            # Fall back to original paths if anything goes wrong
+            pass
+
     trade_log = load_trade_log(trade_log_path)
     ticker_stats = load_ticker_stats(ticker_stats_path)
 
@@ -125,6 +138,17 @@ def load_top_bottom_tickers(
         output_dir = DEFAULT_OUTPUT_DIR
 
     ticker_stats_path = os.path.join(output_dir, "ticker_stats.csv")
+
+    # If no root ticker_stats, fall back to latest backtest directory
+    if not os.path.exists(ticker_stats_path):
+        try:
+            dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
+            if dirs:
+                latest = dirs[0]
+                ticker_stats_path = os.path.join(output_dir, latest, "ticker_stats.csv")
+        except Exception:
+            pass
+
     return get_top_bottom_tickers(ticker_stats_path, top_n=top_n, bottom_n=bottom_n)
 
 
