@@ -9,20 +9,20 @@ Invest プロジェクト コマンド一覧
 複数のターミナルを開いて以下を実行してください（順番は関係ありません）
 
 ### ターミナル1：バックエンドAPI起動
-```powershell
-cd C:\00_mycode\Invest\python
-.\.venv\Scripts\Activate.ps1
-cd C:\00_mycode\Invest\backend
+```bash
+cd /mnt/c/00_mycode/Invest/python
+source .venv/bin/activate
+cd /mnt/c/00_mycode/Invest/backend
 python -m uvicorn app:app --reload --port 8000
 ```
 - API サーバーは http://localhost:8000 で起動します
 - ホットリロード対応
 
 ### ターミナル2：フロントエンド開発サーバー起動
-```powershell
-cd C:\00_mycode\Invest\python
-.\.venv\Scripts\Activate.ps1
-cd C:\00_mycode\Invest\frontend
+```bash
+cd /mnt/c/00_mycode/Invest/python
+source .venv/bin/activate
+cd /mnt/c/00_mycode/Invest/frontend
 npm run dev
 ```
 - React アプリは http://localhost:3000 で起動します
@@ -58,8 +58,8 @@ curl http://localhost:8000/api/backtest/results/20260303-221229
 - **Trades タブ**: 全トレード詳細テーブル（ソート・ページネーション対応）
 
 ### /dashboard チャート確認（Task1）
-```powershell
-cd C:\00_mycode\Invest\frontend
+```bash
+cd /mnt/c/00_mycode/Invest/frontend
 # チャート関連ユニットテスト
 npm run test -- src/components/TopBottomPurchaseCharts.test.tsx
 # フロントエンドビルド確認
@@ -120,16 +120,16 @@ curl -X POST http://localhost:8000/api/jobs/<job_id>/cancel
 ```
 
 ### キャッシュのクリア
-```powershell
+```bash
 # Python キャッシュ削除
 cd python
-Remove-Item -Recurse __pycache__
-Remove-Item -Recurse .pytest_cache
+rm -rf __pycache__
+rm -rf .pytest_cache
 
 # Node.js キャッシュ削除
 cd frontend
 npm cache clean --force
-Remove-Item -Recurse node_modules
+rm -rf node_modules
 npm install
 ```
 
@@ -167,14 +167,14 @@ npm run dist
 
 # Python 環境セットアップ
 
-```powershell
-cd C:\00_mycode\Invest\python
+```bash
+cd /mnt/c/00_mycode/Invest/python
 # 仮想環境作成（初回のみ）
-python -m venv venv
+python -m venv .venv
 # 環境構築
 pip install -r requirements.txt
 # 仮想環境起動
-.venv\Scripts\Activate.ps1
+source .venv/bin/activate
 ```
 
 ---

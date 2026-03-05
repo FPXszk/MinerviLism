@@ -36,12 +36,12 @@
 
 ### 1) Python 環境の準備（Windows PowerShell の例）
 
-```powershell
-cd C:\00_mycode\Invest\python
+```bash
+cd /mnt/c/00_mycode/Invest/python
 # 仮想環境作成（任意の名前、ここでは .venv を例示）
 python -m venv .venv
 # 仮想環境を有効化
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate
 # 依存関係をインストール
 pip install -r requirements.txt
 ```
@@ -50,8 +50,8 @@ pip install -r requirements.txt
 
 ### 2) バックエンド起動
 
-```powershell
-cd C:\00_mycode\Invest\backend
+```bash
+cd /mnt/c/00_mycode/Invest/backend
 python -m uvicorn app:app --reload --port 8000
 ```
 
@@ -59,8 +59,8 @@ python -m uvicorn app:app --reload --port 8000
 
 ### 3) フロントエンド起動
 
-```powershell
-cd C:\00_mycode\Invest\frontend
+```bash
+cd /mnt/c/00_mycode/Invest/frontend
 npm install
 npm run dev
 ```
@@ -75,16 +75,16 @@ http://localhost:3000/dashboard
 
 - Stage2（スクリーニング）:
 
-```powershell
-cd C:\00_mycode\Invest\python
+```bash
+cd /mnt/c/00_mycode/Invest/python
 python main.py --mode stage2
 python main.py --mode stage2 --with-fundamentals
 ```
 
 - Backtest（バックテスト）:
 
-```powershell
-cd C:\00_mycode\Invest\python
+```bash
+cd /mnt/c/00_mycode/Invest/python
 python main.py --mode backtest
 python main.py --mode backtest --start 2023-01-01 --end 2024-01-01
 python main.py --mode backtest --tickers AAPL,MSFT,NVDA

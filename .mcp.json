@@ -2,7 +2,7 @@
   "mcpServers": {
     "filesystem": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-filesystem", "C:/00_mycode/Invest"],
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-filesystem", "/mnt/c/00_mycode/Invest"],
       "description": "Filesystem operations for project directory"
     },
     "github": {
