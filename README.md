@@ -1,195 +1,132 @@
-# 📘 Invest Project – 開発ガイドライン（Copilot最適化版）
+Invest プロジェクト
 
----
+1. プロジェクト概要
 
-## 🎯 プロジェクトの目的
+このリポジトリは、ルールベースの株式スクリーニングおよびバックテストを行うためのツール群を収めたプロジェクトです。コアのバックテスト・スクリーニングは python/ に実装され、実行結果（CSV やチャート画像）を backend の API（FastAPI）が読み取り、frontend の React + TypeScript アプリで可視化します。設計方針としてはデータパイプライン（Stage1 / Stage2 / Backtest）を採用し、再現性・決定性を最優先にしています。
 
-このプロジェクトは以下を目的とする：
+2. このプロジェクトでできること
 
-1. 米国株を対象としたスクリーニング
-2. 条件通過銘柄のバックテスト実行
-3. 結果の可視化（Web UI）
-4. 再現性のある戦略検証
+- 大量銘柄に対するテクニカルスクリーニング（Stage2）
+- ルールベースのバックテスト（エントリー・エグジットのシミュレーション）
+- バックテスト結果のチャート生成（PNG）と CSV 出力
+- FastAPI 経由でのバックテスト結果提供（チャートは base64 Data URI）
+- React ダッシュボードでの結果表示・ログ確認・コマンド実行（Python Command Runner）
+- スクリプトによる銘柄リスト更新や各種ユーティリティ実行
 
----
+3. システム構成
 
-# 🏗 アーキテクチャ原則
+- python/: バックテストやスクリーニング本体、スクリプト類（CLI 実行）
+  - エントリポイント: main.py（--mode で stage2 / backtest / chart 等を指定）
+  - 出力例: python/output/backtest/backtest_YYYY-MM-DD_to_YYYY-MM-DD_TIMESTAMP/
+    - trades.csv, ticker_stats.csv, trade_log.csv, charts/*.png など
 
-本プロジェクトは **データパイプライン型アーキテクチャ** を採用している。
+- backend/: FastAPI による API 層
+  - python 側の出力を読み、JSON を返す（charts は data:image/png;base64,... 形式）
+  - 提供 API 例: /api/backtest/list, /api/backtest/latest, /api/backtest/results/{timestamp}
 
-## ステージ構造
+- frontend/: React + TypeScript（Vite ビルド）
+  - ダッシュボードでバックテスト一覧・サマリ・チャート・トレードテーブルを表示
+  - 環境変数: REACT_APP_API_URL（API のベース URL を上書き可能）
 
-- Stage1: 銘柄ユニバース構築・正規化
-- Stage2: テクニカルスクリーニング
-- Backtest: Stage2結果を用いた売買シミュレーション
+- optional: Electron 関連ファイル（デスクトップ版の開発用スクリプトが含まれる）
 
-## 設計原則
+データフロー: python バックテスト実行 -> output ディレクトリへ CSV/PNG 出力 -> backend が読み込み JSON で配信 -> frontend が表示
 
-- 各ステージは独立実行可能
-- 各ステージは明示的な出力（CSV / logs / cache）を生成
-- 下流は上流の出力のみを参照
-- ステージ間の直接ロジック依存は禁止（疎結合）
-- BacktestがStage2内部ロジックを直接呼び出す設計は禁止（ファイルI/O連携）
+4. クイックスタート
 
----
+前提: Python と Node.js / npm がインストールされていること。
 
-# 🔁 再現性・決定性の原則
+1) Python 環境の準備（Windows PowerShell の例）
 
-本プロジェクトは以下を最優先する：
-
-- Deterministic（決定的実行）
-- Reproducible（再現可能な結果）
-- Incremental execution（段階的再実行）
-
-禁止事項：
-
-- 暗黙状態の利用
-- グローバル状態の乱用
-- ステージ横断の副作用
-- 未来データ参照（look-ahead）
-
-既存バックテスト結果が大きく変わる変更は理由を明示すること。
-
----
-
-# 🧠 戦略思想
-
-本バックテストは：
-
-- 感情を排除したルールベース
-- 再現可能性を最優先
-- 未来データを絶対に参照しない
-- ロジックは明示的に記述（暗黙条件禁止）
-
-エントリー：
-- 条件成立翌営業日寄り付き
-
-エグジット：
-- 利確 / 損切り / 保有日数経過
-
-同日ENTRY/EXITは禁止。
-
----
-
-# 🧪 テスト方針（TDD前提）
-
-基本フロー：
-
-1. 失敗するテストを書く（RED）
-2. 最小実装で通す（GREEN）
-3. リファクタリング（IMPROVE）
-
-要件：
-
-- カバレッジ80%以上
-- Unit / Integration / E2E テストを適切に使い分ける
-- ロジック変更時は必ず検証
-- 結果乖離が大きい場合は理由を説明
-
----
-
-# 📦 コード設計ポリシー
-
-- 小さなファイルを優先（200–400行目安、最大800行）
-- feature / domain単位で整理
-- 高凝集・低結合
-- 設定値はハードコードしない（config化）
-
----
-
-# 🖥 システム構成
-
-## python/
-バックテストロジック本体
-
-- `main.py` → エントリーポイント
-- mode:
-  - stage2 → スクリーニング
-  - backtest → バックテスト
-
-## backend/
-FastAPIサーバー
-
-- バックテスト結果をAPIで返す
-- ロジックはpython層に置く
-
-## frontend/
-React + TypeScript
-
-- 表示専用
-- 計算ロジック禁止
-
----
-
-# 🛠 python/scripts 規律
-
-`python/scripts/` は実行エントリーポイント。
-
-- CLI引数検証必須
-- Fail Fast
-- 起動時クラッシュ禁止
-- スモークテスト優先
-
----
-
-# ⚠️ 絶対ルール
-
-### 1. print()禁止
-ログは必ず logger を使用。
-
-### 2. DataFrame安全チェック必須
-```python
-if df is None or df.empty:
-    return
+```powershell
+cd C:\00_mycode\Invest\python
+# 仮想環境作成（任意の名前、ここでは .venv を例示）
+python -m venv .venv
+# 仮想環境を有効化
+.\.venv\Scripts\Activate.ps1
+# 依存関係をインストール
+pip install -r requirements.txt
 ```
 
-### 3. 未来データ参照禁止
-- shift(-1) の安易な利用禁止
-- 翌日価格の同日判定利用禁止
-- rolling計算のズレ無視禁止
+注: プロジェクトで既に venv 名が使われている可能性があるため、環境名に合わせてパスを調整してください（例: venv\Scripts\Activate.ps1 など）。
 
----
+2) バックエンド起動
 
-# 📊 出力仕様
+```powershell
+cd C:\00_mycode\Invest\backend
+python -m uvicorn app:app --reload --port 8000
+```
 
-`output/backtest/` 以下：
+バックエンドは http://localhost:8000 で起動します。
 
-- trades.csv
-- trade_log.csv
-- ticker_stats.csv
-- charts/
+3) フロントエンド起動
 
-構造変更時は影響範囲を明示。
+```powershell
+cd C:\00_mycode\Invest\frontend
+npm install
+npm run dev
+```
 
----
+フロントエンドは開発サーバで http://localhost:3000 に表示される想定です（環境によりポートや設定が異なる場合があります）。
 
-# 🔐 セキュリティ
+4) ブラウザでダッシュボードを開く
 
-- 秘密情報のハードコード禁止
-- 環境変数使用
-- 入力値検証必須
+http://localhost:3000/dashboard
 
----
+5. CLI の使い方 (主要コマンド例)
 
-# 🔄 Git運用ルール
+- Stage2（スクリーニング）:
 
-- Conventional Commits（feat:, fix:, refactor:, docs:, test:）
-- main直push禁止
-- PRレビュー必須
-- テスト全通過でマージ
+```powershell
+cd C:\00_mycode\Invest\python
+python main.py --mode stage2
+python main.py --mode stage2 --with-fundamentals
+```
 
----
+- Backtest（バックテスト）:
 
-# 🤖 Copilotへの指示
+```powershell
+cd C:\00_mycode\Invest\python
+python main.py --mode backtest
+python main.py --mode backtest --start 2023-01-01 --end 2024-01-01
+python main.py --mode backtest --tickers AAPL,MSFT,NVDA
+python main.py --mode backtest --no-charts  # チャート生成をスキップ
+```
 
-- 設計を壊す変更をしない
-- ロジックを勝手に簡略化しない
-- 暗黙仕様を追加しない
-- 可読性を優先する
+- Chart（個別チャート生成）:
 
----
+```powershell
+python main.py --mode chart --ticker AAPL --start 2023-01-01 --end 2024-01-01
+```
 
-# 🎯 設計思想まとめ
+- スクリプト実行例（銘柄リスト更新など）:
 
-「再現性・疎結合・テスト駆動を最優先とする  
-データパイプライン型ルールベース検証エンジン」
+```powershell
+python scripts/update_tickers_extended.py --min-market-cap 5000000000 --max-tickers 2000
+```
+
+- API 経由でジョブを作成する例（バックエンドの /api/jobs）:
+
+```powershell
+curl -X POST http://localhost:8000/api/jobs -H "Content-Type: application/json" -d "{\"command\":\"backtest\",\"start_date\":\"2024-01-01\",\"end_date\":\"2024-12-31\"}"
+```
+
+6. ディレクトリ構成（概要）
+
+- .github/                     : CI / Copilot 指示など
+- backend/                     : FastAPI の API 層（app 起動）
+- frontend/                    : React + TypeScript アプリ（Vite）
+- python/                      : バックテスト / スクリーニング本体、scripts/
+- docs/                        : 補足ドキュメント（存在する場合）
+- tests/                       : テストコード（pytest 等）
+- package.json                 : ルートの npm スクリプト（Electron など）
+- electron-launcher.js         : Electron 起動補助
+- vite.config.ts / tailwind.config.js : フロントエンド設定
+
+7. ドキュメント一覧
+
+- README.md       : 本ファイル（プロジェクト概要・導線）
+- STRATEGY.md     : 売買ロジック、フィルタ条件、エントリー/エグジットの仕様（ロジック変更時は必ず参照/更新）
+- COMMAND.md      : 開発時の起動コマンド、デバッグ手順、環境構築メモ
+- CONTRIBUTING.md : 開発ポリシー（TDD、テスト方針、禁止事項など）
+- IMPLEMENTATION_REVIEW.md : 実装レビューや機能実装の詳細レポート
