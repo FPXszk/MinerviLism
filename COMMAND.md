@@ -5,7 +5,7 @@ Invest プロジェクト コマンド一覧
 
 # Backtest Dashboard (Web UI)
 
-## 🚀 開発環境での起動
+## 開発環境での起動
 複数のターミナルを開いて以下を実行してください（順番は関係ありません）
 
 ### ターミナル1：バックエンドAPI起動
@@ -45,7 +45,7 @@ curl http://localhost:8000/api/backtest/list
 curl http://localhost:8000/api/backtest/results/20260303-221229
 ```
 
-## 📊 ダッシュボード機能
+## ダッシュボード機能
 - **サイドバー**: バックテスト実行履歴の一覧表示
 - **Python Command Runner**: バックテスト / スクリーニング / チャート生成 / 銘柄更新を引数付きで実行
 - **ジョブステータス表示**: queued / running / succeeded / failed / cancelled / timeout
@@ -68,7 +68,7 @@ curl http://localhost:8000/api/backtest/results/20260303-221229
 - `chart` (`--ticker`, `--start`, `--end`)
 - `update_tickers` (`--min-market-cap`, `--max-tickers`)
 
-## 🐛 デバッグ・トラブルシューティング
+## デバッグ・トラブルシューティング
 
 ### ブラウザ開発者ツール
 ```

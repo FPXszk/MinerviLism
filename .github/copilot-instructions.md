@@ -1,77 +1,54 @@
-# .github/copilot-instructions.md — Copilot 用指示（日本語）
+# Copilot Instructions
 
-このファイルは GitHub Copilot / 自動化エージェントがこのリポジトリで安全かつ効果的に動作するための要点をまとめたものです。
-主にビルド／テスト実行コマンド、アーキテクチャの要点、リポジトリ固有の規約を短く示します。
-
----
-
-## 1) 主要なビルド・実行・テストコマンド（現状）
-
-- Python (バックエンド / スクリプト)
-  - 仮想環境有効化（Windows PowerShell）:
-    ```powershell
-    cd C:\00_mycode\Invest\python
-    .\.venv\Scripts\Activate.ps1
-    ```
-  - FastAPI 開発サーバ:
-    ```powershell
-    cd C:\00_mycode\Invest\backend
-    python -m uvicorn app:app --reload --port 8000
-    ```
-  - スクリプト実行（Stage2 / Backtest 等）:
-    ```powershell
-    cd C:\00_mycode\Invest\python
-    python main.py --mode stage2
-    python main.py --mode backtest --start 2023-01-01 --end 2024-01-01
-    # チャート生成をスキップ: --no-charts
-    ```
-  - 単一スクリプト実行例:
-    ```powershell
-    python scripts/update_tickers_extended.py --min-market-cap 5000000000
-    ```
-
-- Frontend (React + TypeScript)
-  - 開発サーバ (ホットリロード):
-    ```powershell
-    cd C:\00_mycode\Invest\frontend
-    npm run dev
-    # フロントは http://localhost:3000
-    ```
-  - ビルド（存在する場合）:
-    ```powershell
-    cd C:\00_mycode\Invest\frontend
-    npm run build
-    ```
-  - Electron / デスクトップ関連 (root package.json にスクリプトあり):
-    - 開発: `npm run dev:hmr` / `npm run electron:dev`
-    - 製品相当確認: `npm run start:prod`
-    - ビルド: `npm run build`, インストーラー: `npm run dist`
-
-- テスト (主に Python)
-  - 全テスト実行:
-    ```powershell
-    cd C:\00_mycode\Invest\python
-    pytest
-    ```
-  - 単一テスト実行例:
-    ```powershell
-    pytest tests/test_ticker_fetcher_smoke.py -v
-    ```
-  - カバレッジ:
-    ```powershell
-    pytest --cov=. --cov-report=html
-    ```
-
-- 型チェック / リント
-  - リント用の専用スクリプトは見つかりませんでした。TypeScript の型チェックは次で実行できます:
-    ```powershell
-    cd C:\00_mycode\Invest\frontend
-    npx tsc --noEmit
-    ```
+このファイルは、このリポジトリで作業する AI の行動ルールを定義します。
 
 ---
 
-## 2) 高レベルアーキテクチャ（要点）
+## 行動ルール
+
+- データパイプライン設計（Stage1 / Stage2 / Backtest）を崩さない。  
+- ステージ間は疎結合を維持し、下流は上流の出力のみを参照する。  
+- 再現性・決定性を最優先し、未来データ参照（look-ahead）を禁止する。  
+- ロジック変更は TDD（RED -> GREEN -> REFACTOR）で進める。  
+- テストでは外部 API をモックし、ネットワーク依存を持ち込まない。  
+- `python/scripts/` の変更時は CLI 引数検証・Fail Fast・スモークテストを重視する。  
+- `print()` は使わず、既存の logger を使う。  
+- DataFrame を扱う処理は `None` / `empty` ガードを入れる。  
+- 機密情報はハードコードせず、環境変数で扱う。  
+- 売買ロジックや戦略条件を変更したら `STRATEGY.md` を同時に更新する。  
+- 実行手順や検証コマンドを変更したら `COMMAND.md` を更新する。  
+- 変更は小さく段階的に行い、暗黙仕様の追加やロジックの勝手な簡略化をしない。  
+
+---
+
+## ファイル別の役割と参照タイミング
+
+| ファイル | 役割 | 参照するタイミング |
+|---|---|---|
+| `README.md` | プロジェクト説明・概要 | プロジェクト全体を把握したいとき |
+| `STRATEGY.md` | 売買ロジック仕様（Python ロジックの基準） | 売買ロジックを変更するとき、条件の追加・緩和を検討するとき |
+| `COMMAND.md` | 開発で使用するコマンド集 | 実装後にコマンドでデバッグ・動作確認するとき |
+
+---
+
+## 参照フロー（必須）
+
+1. まず `README.md` を読んで目的・アーキテクチャ・基本原則を確認する。  
+2. 売買ロジック関連の変更は、必ず `STRATEGY.md` を正として仕様と整合させる。
+3. 実装後の確認・デバッグは `COMMAND.md` のコマンドを使って実施する。
+
+---
+
+## 実装時チェック
+
+- 仕様確認: `README.md` / `STRATEGY.md`
+- 実装: 既存アーキテクチャを維持して最小差分で変更
+- 検証: `COMMAND.md` のコマンドで再現可能に確認
+- 反映: 必要に応じて関連ドキュメントを更新
+
+---
+
+## 高レベルアーキテクチャ（要点）
 
 - python/: バックテスト／スクリーニングの本体（CLI で実行、出力は CSV / PNG）。
 - backend/: FastAPI サーバが python の出力ディレクトリを読み、JSON（チャートは base64 Data URI）で返す。
@@ -81,7 +58,7 @@
 
 ---
 
-## 3) リポジトリ固有の主要規約（Copilot が従うべき事項）
+## リポジトリ固有の主要規約（Copilot が従うべき事項）
 
 - TDD 優先: 新しいロジックや script 変更はまずテストを書く（RED→GREEN→REFACTOR）。
 - テスト要件: 外部 API は必ずモック、ネットワーク禁止、テストは短時間で完了（目安: 5 秒以内）。
@@ -95,27 +72,18 @@
 
 ---
 
-## 4) API / 型・コンパチビリティに関する注意
+## API / 型・コンパチビリティに関する注意
 
 - API は現状 JSON + charts: `data:image/png;base64,...` で返却される（フロントはこれをそのまま表示）。この交換形式を勝手に変更しないこと。変更する場合は backend の TypeScript 型定義と tests を同時に更新する。
 - フロントは計算ロジックを持たない（表示専用）。重いロジックは python 側で実行させる。
 
 ---
 
-## 5) Copilot への具体的な指示（行動方針）
+## Copilot への具体的な指示（行動方針）
 
 - 設計を壊す変更をしない。大きな構造変更は計画 (plan) を立て、ユーザに確認する。
 - 変更提案には必ず対応するテスト（ユニットまたはスモーク）を添付する。
 - API 変更提案はバックエンドとフロント両方の型/実装差分を示すこと。
 - 変更は小さく段階的に行い、ドキュメント（STRATEGY.md / COMMAND.md）を更新する。
-
----
-
-## 6) 参照すべきファイル（起点）
-- README.md
-- COMMAND.md
-- CONTRIBUTING.md
-- STRATEGY.md
-- python/、backend/、frontend/ ディレクトリ
 
 ---
