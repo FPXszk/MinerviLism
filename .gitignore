@@ -52,6 +52,8 @@ wheels/
 .installed.cfg
 *.egg
 .pytest_cache/
-python/output/
+python/output/charts
+python/output/job_runs
+python/output/backtest
 python/cache/
 _pending/
