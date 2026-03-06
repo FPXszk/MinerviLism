@@ -10,9 +10,9 @@ Invest プロジェクト コマンド一覧
 
 ### ターミナル1：バックエンドAPI起動
 ```bash
-cd /mnt/c/00_mycode/Invest/python
+cd $HOME/code/Invest/python
 source .venv/bin/activate
-cd /mnt/c/00_mycode/Invest/backend
+cd $HOME/code/Invest/backend
 python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 - API サーバーは http://localhost:8000 で起動します（同一ネットワーク端末からはホストIP:8000 でもアクセス可能）
@@ -20,9 +20,9 @@ python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
 
 ### ターミナル2：フロントエンド開発サーバー起動
 ```bash
-cd /mnt/c/00_mycode/Invest/python
+cd $HOME/code/Invest/python
 source .venv/bin/activate
-cd /mnt/c/00_mycode/Invest/frontend
+cd $HOME/code/Invest/frontend
 npm run dev -- --host
 ```
 - React アプリは http://localhost:3000 で起動します（同一ネットワーク端末からはホストIP:3000 でもアクセス可能）
@@ -59,7 +59,7 @@ curl http://localhost:8000/api/backtest/results/20260303-221229
 
 ### /dashboard チャート確認（Task1）
 ```bash
-cd /mnt/c/00_mycode/Invest/frontend
+cd $HOME/code/Invest/frontend
 # チャート関連ユニットテスト
 npm run test -- src/components/TopBottomPurchaseCharts.test.tsx
 # フロントエンドビルド確認
@@ -168,7 +168,7 @@ npm run dist
 # Python 環境セットアップ
 
 ```bash
-cd /mnt/c/00_mycode/Invest/python
+cd $HOME/code/Invest/python
 # 仮想環境作成（初回のみ）
 python -m venv .venv
 # 環境構築

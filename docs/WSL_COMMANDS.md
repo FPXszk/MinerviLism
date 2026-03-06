@@ -1,13 +1,13 @@
 # WSL: tmux と Copilot 起動メモ
 
-以下は WSL 上でこのリポジトリを操作するための簡易メモです。ルートは /mnt/c/00_mycode/Invest を想定しています。
+以下は WSL 上でこのリポジトリを操作するための簡易メモです。ルートは $HOME/code/Invest を想定しています。
 
 ## tmux セッション作成
 ```bash
 # 新しい tmux セッションを作る
 tmux new -s ai
 # 作業ディレクトリに移動
-cd /mnt/c/00_mycode/Invest/Python
+cd $HOME/code/Invest/python
 source .venv/bin/activate
 ```
 
@@ -18,20 +18,20 @@ copilot --model gpt-5.3-codex --yolo
 
 
 # 複数オプションで起動（autopilot など）
-cd /mnt/c/00_mycode/Invest
+cd $HOME/code/Invest
 
 copilot \
   --model gpt-5.3-codex \
   --yolo \
   --autopilot \
-  --add-dir /mnt/c/00_mycode/Invest
+  --add-dir $HOME/code/Invest
 
 
 copilot \
   --model gpt-5 mini \
   --yolo \
   --autopilot \
-  --add-dir /mnt/c/00_mycode/Invest
+  --add-dir $HOME/code/Invest
 ```
 
 ## tmux のデタッチ/アタッチ
