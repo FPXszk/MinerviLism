@@ -29,3 +29,31 @@
   - 開発作業ディレクトリが `/home/FPXszk/code/Invest` に移る
   - Git 改行変換・fileMode 差分の発生確率を低減
   - Windows 固有パス/コマンドの残存箇所を可視化できる
+
+## devinit.sh 起動不具合修正計画（2026-03-06）
+
+### 問題
+- `./devinit.sh` 実行時、既存 tmux セッション `invest` が不完全でも再利用され、4ペイン起動コマンドが流れない。
+- その結果、「スマホ表示向けモード」表示後に backend/frontend/copilot/logs の起動確認ができない状態になる。
+
+### タスク
+- [ ] `devinit.sh` に既存セッションの健全性チェック（4ペイン構成確認）を追加する。
+- [ ] 不完全セッションを自動で再作成し、4ペインへ起動コマンドを再投入する。
+- [ ] 既存正常セッション再利用時の挙動（attachのみ）を維持する。
+- [ ] 手動検証で「壊れた既存セッション」および「新規起動」を確認する。
+
+### 影響範囲
+- 変更ファイル: `devinit.sh`
+- 実行時影響: tmux セッション再利用ロジックのみ（戦略/バックテストロジックへの影響なし）
+
+## devinit.sh 改善計画（2026-03-06 all）
+
+### タスク
+- [ ] `devinit.sh` に `--reset` オプションを追加する（既存セッション強制再作成）。
+- [ ] 起動前に tmux セッション健全性サマリ（pane count/title）を表示する。
+- [ ] `tests/devinit_test.sh` を新規追加し、tmux モックで主要分岐を検証する。
+- [ ] `docs/COMMAND.md` に `./devinit.sh --reset` とテスト実行手順を追記する。
+
+### 影響範囲
+- 変更ファイル: `devinit.sh`, `tests/devinit_test.sh`, `docs/COMMAND.md`
+- 非影響: Stage1/Stage2/Backtest の売買ロジック、API 契約
