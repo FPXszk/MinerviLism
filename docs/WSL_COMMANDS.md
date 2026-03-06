@@ -40,6 +40,8 @@ copilot \
 ```
 
 ## tmux のデタッチ/アタッチ
+exit
+wsl --shutdown
 tmux kill-server
 - デタッチ: Ctrl+B, D
 - 再アタッチ: tmux attach -t invest
