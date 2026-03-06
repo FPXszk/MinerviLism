@@ -9,7 +9,7 @@
 ## まずやってほしいチェック（WSLで実行）
 ```bash
 # 作業ディレクトリ
-cd /mnt/c/00_mycode/Invest
+cd $HOME/code/Invest
 
 # 環境情報の自動収集スクリプト（./scripts/wsl_env_check.sh を作成済）を実行
 bash ./scripts/wsl_env_check.sh
@@ -42,7 +42,7 @@ sudo apt update && sudo apt install -y \
 
 ## 差分解消の実行コマンド（WSL）
 ```bash
-cd /mnt/c/00_mycode/Invest
+cd $HOME/code/Invest
 
 # Node 依存をクリーン再構築（ルート + frontend）
 rm -rf node_modules frontend/node_modules
