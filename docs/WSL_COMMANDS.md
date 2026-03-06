@@ -3,7 +3,7 @@
 以下は WSL 上でこのリポジトリを操作するための簡易メモです。ルートは $HOME/code/Invest を想定しています。
 
 ## tmux セッション作成
-```bash
+```
 # 新しい tmux セッションを作る
 tmux new -s ai
 # 作業ディレクトリに移動
@@ -12,26 +12,32 @@ source .venv/bin/activate
 ```
 
 ## Copilot CLI（対話例）
-```bash
-# 単発実行
-copilot --model gpt-5.3-codex --yolo
 
 
 # 複数オプションで起動（autopilot など）
+```
+wsl
+cd $HOME/code/Invest/python
+source .venv/bin/activate
 cd $HOME/code/Invest
 
 copilot \
-  --model gpt-5.3-codex \
-  --yolo \
-  --autopilot \
-  --add-dir $HOME/code/Invest
-
+ --model gpt-5.3-codex \
+ --reasoning xhigh \
+ --autopilot \
+ --yolo \
+ --allow-all \
+ --add-github-mcp-toolset all \
+ --add-dir ~/code/Invest
 
 copilot \
-  --model gpt-5 mini \
-  --yolo \
-  --autopilot \
-  --add-dir $HOME/code/Invest
+ --model gpt-5-mini \
+ --reasoning high \
+ --autopilot \
+ --yolo \
+ --allow-all \
+ --add-github-mcp-toolset all \
+ --add-dir ~/code/Invest
 ```
 
 ## tmux のデタッチ/アタッチ
