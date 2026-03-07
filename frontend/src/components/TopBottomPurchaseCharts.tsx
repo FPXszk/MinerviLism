@@ -59,6 +59,9 @@ export function calculateMarkerSize(amount: number, scale = 0.12): number {
   return Math.max(MIN_MARKER_SIZE, Math.min(MAX_MARKER_SIZE, Number(raw.toFixed(2))))
 }
 
+// Backwards-compatible export: some tests and older code expect calculateSymbolSize
+export const calculateSymbolSize = calculateMarkerSize
+
 export function buildTopBottomPurchaseCharts(
   trades: TradeRecord[],
   tickerStats: TickerStats[],
