@@ -76,6 +76,7 @@ create_layout() {
   tmux select-pane -t "${SESSION_NAME}:0.3" -T copilot
   tmux select-pane -t "${SESSION_NAME}:0.1" -T logs
   tmux select-pane -t "${SESSION_NAME}:0.4" -T git
+  tmux select-pane -t "${SESSION_NAME}:0.3"
 }
 
 start_commands() {
