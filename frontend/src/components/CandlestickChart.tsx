@@ -235,11 +235,43 @@ export function CandlestickChart({
   const [PlotComponent, setPlotComponent] = React.useState<any>(null)
   const [plotError, setPlotError] = React.useState<string | null>(null)
 
+  // Background chart image (base64 data URI) fetched from backend latest results
+  const [bgImage, setBgImage] = React.useState<string | null>(null)
+
+  // Fetch latest backtest charts and pick the one corresponding to this ticker
+  React.useEffect(() => {
+    let mounted = true
+    async function fetchChartImage() {
+      try {
+        const res = await fetch('/api/backtest/latest')
+        if (!res.ok) return
+        const data = await res.json()
+        const charts = (data && (data as any).charts) || {}
+        const keys = Object.keys(charts || {})
+        // Prefer explicit '{ticker}_price_chart', then exact ticker, then any key containing ticker
+        let key = keys.find((k) => k === `${ticker}_price_chart`) || keys.find((k) => k === ticker) || keys.find((k) => k.includes(ticker)) || keys.find((k) => k.includes('_price_chart'))
+        if (key && charts[key]) {
+          if (!mounted) return
+          setBgImage(charts[key])
+        }
+      } catch (e) {
+        // Non-fatal - background image is optional
+        // eslint-disable-next-line no-console
+        console.warn('Failed to fetch chart image for background', e)
+      }
+    }
+
+    fetchChartImage()
+    return () => {
+      mounted = false
+    }
+  }, [ticker])
+
   React.useEffect(() => {
     let mounted = true
     if (!showModal) return
     // Dynamic import react-plotly.js only when modal is opened
-    (async () => {
+    ;(async () => {
       try {
         const mod = await import('react-plotly.js')
         if (!mounted) return
@@ -254,6 +286,24 @@ export function CandlestickChart({
       mounted = false
     }
   }, [showModal])
+
+  // If a background image is available, add it to the Plotly layout so it scales with the plot
+  const layoutWithImage = React.useMemo(() => {
+    if (!bgImage) return layout
+    const img = {
+      source: bgImage,
+      xref: 'paper',
+      yref: 'paper',
+      x: 0,
+      y: 1,
+      sizex: 1,
+      sizey: 1,
+      sizing: 'stretch',
+      layer: 'below',
+      opacity: 0.95,
+    }
+    return { ...layout, images: [img], autosize: true }
+  }, [bgImage, layout])
 
   return (
     <div data-testid="candlestick-chart" style={{ width: '100%' }}>
@@ -271,9 +321,23 @@ export function CandlestickChart({
             data-testid="chart-rendered"
             data-traces={JSON.stringify(traces.length)}
             data-ticker={ticker}
-            style={{outline: 'none', cursor: 'zoom-in'}}
+            style={{
+              outline: 'none',
+              cursor: 'zoom-in',
+              minHeight: 200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
           >
-            Chart rendered with {traces.length} traces
+            {/* Keep marker count for tests and accessibility */}
+            <div style={{background: 'rgba(0,0,0,0.45)', padding: 8, borderRadius: 6}}>
+              Chart rendered with {traces.length} traces
+            </div>
           </div>
         </div>
       )}
@@ -289,11 +353,11 @@ export function CandlestickChart({
                 <p>Please ensure react-plotly.js is installed in the environment.</p>
               </div>
             ) : PlotComponent ? (
-              // Render Plotly interactive chart
+              // Render Plotly interactive chart with background image if available
               <div style={{width: '100%', height: '100%'}}>
                 <PlotComponent
                   data={traces as any}
-                  layout={{...layout, autosize: true}}
+                  layout={layoutWithImage as any}
                   config={{responsive: true, scrollZoom: true}}
                   useResizeHandler
                   style={{width: '100%', height: '100%'}}

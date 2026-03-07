@@ -242,13 +242,22 @@ def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResu
     summary = load_backtest_summary(result_dir)
     
     # Load trade data
-    trades_path = os.path.join(result_dir, "trades.csv")
-    trades = load_trade_log(trades_path)
-    
+    # Some backtests generate 'trades.csv' while others use 'trade_log.csv'. Try both.
+    trades = []
+    trades_candidates = [
+        os.path.join(result_dir, "trades.csv"),
+        os.path.join(result_dir, "trade_log.csv"),
+        os.path.join(result_dir, "trade_log.csv"),
+    ]
+    for p in trades_candidates:
+        if os.path.exists(p):
+            trades = load_trade_log(p)
+            break
+
     # Load ticker statistics
     ticker_stats_path = os.path.join(result_dir, "ticker_stats.csv")
     ticker_stats = load_ticker_stats(ticker_stats_path)
-    
+
     # Load charts as base64
     charts = {}
     charts_dir = os.path.join(result_dir, "charts")
