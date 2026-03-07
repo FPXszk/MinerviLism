@@ -38,7 +38,7 @@ async function capture(url, outDir) {
 }
 
 const argv = require('minimist')(process.argv.slice(2));
-const url = argv.url || argv.u || 'http://localhost:5173/dashboard';
+const url = argv.url || argv.u || 'http://127.0.0.1:5174/dashboard';
 const out = argv.out || argv.o || 'tests/screenshots';
 
 // Ensure output directory exists and is writable before starting browsers

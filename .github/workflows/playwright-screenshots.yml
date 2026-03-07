@@ -24,7 +24,7 @@ jobs:
       - name: Build and start frontend preview
         run: |
           # Install frontend deps and build
-          npm --prefix frontend ci
+          npm --prefix frontend ci || npm --prefix frontend install --no-audit --no-fund
           npm --prefix frontend run build
           # Start a preview server in background and log output (use port 5174 to avoid conflicts)
           npm --prefix frontend run preview -- --port 5174 > frontend.log 2>&1 &
