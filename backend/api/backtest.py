@@ -292,6 +292,12 @@ def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResu
                 break
 
     if need_generation:
+        # Ensure repo root is on sys.path so sibling 'python' package can be imported
+        import sys
+        from pathlib import Path as _Path
+        _repo_root = str(_Path(__file__).resolve().parents[2])
+        if _repo_root not in sys.path:
+            sys.path.insert(0, _repo_root)
         # First try the full-featured ticker_charts module which may fetch data (yfinance)
         try:
             # Import here to avoid hard dependency unless needed
