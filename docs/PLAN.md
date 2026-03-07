@@ -29,3 +29,5 @@ devinit.sh
 
 8. TERM 環境変数追加
    - xterm-256color
+
+sudo apt install multitail
