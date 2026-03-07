@@ -13,6 +13,7 @@ cd "${ROOT_DIR}"
 
 export LESS="-R"
 export EDITOR=nano
+export TERM=xterm-256color
 
 echo "Copilot CLI をスマホ表示向けモードで起動しています"
 
