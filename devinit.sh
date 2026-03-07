@@ -42,6 +42,9 @@ attach_or_switch() {
 session_is_healthy() {
   local pane_count titles expected_title
 
+  window_name="$(tmux display-message -p -t ${SESSION_NAME}:0 '#W')"
+  [[ "${window_name}" == "dev" ]] || return 1
+
   pane_count="$(tmux list-panes -t "${SESSION_NAME}:0" 2>/dev/null | wc -l | tr -d ' ')"
   [[ "${pane_count}" -eq 5 ]] || return 1
 
