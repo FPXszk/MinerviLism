@@ -31,7 +31,7 @@ async function capture(url, outDir) {
 
               // Wait for modal image to be loaded (naturalWidth > 0)
               await page.waitForFunction(() => {
-                const img = document.querySelector('[data-testid="chart-modal-image"]') as HTMLImageElement | null
+                const img = document.querySelector('[data-testid="chart-modal-image"]')
                 return img && img.complete && img.naturalWidth > 0
               }, { timeout: 10000 }).catch(() => null)
 
