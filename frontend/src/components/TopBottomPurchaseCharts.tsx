@@ -53,7 +53,7 @@ function toPurchasePoint(rawTrade: TradeRecord): PurchasePoint | null {
   }
 }
 
-export function calculateMarkerSize(amount: number, scale = 0.12): number {
+export function calculateMarkerSize(amount: number, scale = 1): number {
   if (!Number.isFinite(amount) || amount <= 0) return MIN_MARKER_SIZE
   const raw = Math.sqrt(amount) * scale
   return Math.max(MIN_MARKER_SIZE, Math.min(MAX_MARKER_SIZE, Number(raw.toFixed(2))))

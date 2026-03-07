@@ -269,25 +269,36 @@ export function CandlestickChart({
     }
   }, [ticker])
 
+  // Load Plotly component lazily on mount so preview can render markers over image
   React.useEffect(() => {
     let mounted = true
-    if (!showModal) return
-    // Dynamic import react-plotly.js only when modal is opened
     ;(async () => {
       try {
         const mod = await import('react-plotly.js')
         if (!mounted) return
         setPlotComponent(() => (mod && (mod.default || mod)))
       } catch (err: any) {
-        // Import failed (likely package not installed in environment)
+        // Non-fatal: interactive charts will be unavailable in some environments
         if (!mounted) return
-        setPlotError(String(err))
       }
     })()
     return () => {
       mounted = false
     }
-  }, [showModal])
+  }, [])
+
+  // Modal view mode: initially show enlarged image, user can switch to interactive plot
+  const [modalMode, setModalMode] = React.useState<'image' | 'plot'>('image')
+  const [zoomScale, setZoomScale] = React.useState<number>(1)
+  const zoomStep = 0.25
+
+  const onWheelZoom = (e: React.WheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) return
+    e.preventDefault()
+    setZoomScale((s) => Math.max(0.2, Math.min(8, Number((s + (e.deltaY > 0 ? -zoomStep : zoomStep)).toFixed(2)))))
+  }
+
+  const resetZoom = () => setZoomScale(1)
 
   // If a background image is available, add it to the Plotly layout so it scales with the plot
   const layoutWithImage = React.useMemo(() => {
@@ -318,8 +329,8 @@ export function CandlestickChart({
           <div
             role="button"
             tabIndex={0}
-            onClick={() => setShowModal(true)}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setShowModal(true)}
+            onClick={() => { setModalMode('image'); setShowModal(true) }}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (setModalMode('image'), setShowModal(true))}
             data-testid="chart-rendered"
             data-traces={JSON.stringify(traces.length)}
             data-ticker={ticker}
@@ -330,49 +341,118 @@ export function CandlestickChart({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundImage: bgImage ? `url(${bgImage})` : undefined,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
+              position: 'relative',
+              backgroundColor: '#0f172a',
             }}
           >
-            {/* Keep marker count for tests and accessibility */}
-            <div style={{background: 'rgba(0,0,0,0.45)', padding: 8, borderRadius: 6}}>
-              Chart rendered with {traces.length} traces
-            </div>
+            {/* If Plotly is available, render a small interactive preview (markers over background image)
+                Otherwise fall back to a CSS background preview */}
+            {PlotComponent ? (
+              <div style={{ width: '100%', height: 260 }}>
+                <PlotComponent
+                  data={traces as any}
+                  layout={{ ...layoutWithImage as any, autosize: true, margin: { t: 8, b: 30, l: 40, r: 8 }, height: 260 }}
+                  config={{ responsive: true, displayModeBar: false }}
+                  useResizeHandler
+                  style={{ width: '100%', height: '100%' }}
+                />
+                <div style={{ position: 'absolute', left: 8, top: 8, background: 'rgba(0,0,0,0.45)', padding: 6, borderRadius: 6, color: '#fff' }}>
+                  {ticker}
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  outline: 'none',
+                  cursor: 'zoom-in',
+                  minHeight: 200,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  width: '100%',
+                  height: 260,
+                }}
+              >
+                <div style={{background: 'rgba(0,0,0,0.45)', padding: 8, borderRadius: 6, color: '#fff'}}>
+                  Chart rendered with {traces.length} traces
+                </div>
+              </div>
+            )}
           </div>
+
         </div>
       )}
 
       {/* Full-screen interactive modal */}
       {showModal && (
-        <div className="candlestick-modal" role="dialog" aria-modal="true">
+        <div className="candlestick-modal" role="dialog" aria-modal="true" onWheel={onWheelZoom}>
           <div className="candlestick-modal-content">
-            <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close">×</button>
-            {plotError ? (
-              <div style={{padding:20}}>
-                <p>Interactive chart unavailable: {plotError}</p>
-                <p>Please ensure react-plotly.js is installed in the environment.</p>
-              </div>
-            ) : PlotComponent ? (
-              // Render Plotly interactive chart with background image if available
-              <div style={{width: '100%', height: '100%'}}>
-                <PlotComponent
-                  data={traces as any}
-                  layout={layoutWithImage as any}
-                  config={{responsive: true, scrollZoom: true}}
-                  useResizeHandler
-                  style={{width: '100%', height: '100%'}}
-                />
+            <button className="modal-close" onClick={() => { setShowModal(false); resetZoom(); setModalMode('image') }} aria-label="Close">×</button>
+
+            {/* Image-first modal: allow zoom/pan on the image, then user can switch to interactive plot */}
+            {modalMode === 'image' ? (
+              <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ color: THEME.textColor }}>{ticker} — 拡大画像</div>
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                    <button onClick={() => setZoomScale((s) => Math.max(0.2, Number((s - zoomStep).toFixed(2))))} aria-label="Zoom out">−</button>
+                    <button onClick={() => setZoomScale((s) => Math.min(8, Number((s + zoomStep).toFixed(2))))} aria-label="Zoom in">＋</button>
+                    <button onClick={resetZoom} aria-label="Reset zoom">Reset</button>
+                    <button onClick={() => setModalMode('plot')} aria-label="Open interactive chart">詳細を開く</button>
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                  {bgImage ? (
+                    <img
+                      src={bgImage}
+                      alt={`${ticker} chart`}
+                      style={{ transform: `scale(${zoomScale})`, transformOrigin: 'center', maxWidth: '100%', maxHeight: '100%', display: 'block' }}
+                      draggable={false}
+                    />
+                  ) : (
+                    <div style={{ color: THEME.textColor }}>No background image available</div>
+                  )}
+                </div>
               </div>
             ) : (
-              <div style={{padding:20}}>Loading interactive chart...</div>
+              plotError ? (
+                <div style={{padding:20}}>
+                  <p style={{color: THEME.textColor}}>Interactive chart unavailable: {plotError}</p>
+                </div>
+              ) : PlotComponent ? (
+                <div style={{ width: '100%', height: '100%' }}>
+                  <div style={{ padding: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ color: THEME.textColor }}>{ticker} — インタラクティブ表示</div>
+                    <div style={{ marginLeft: 'auto' }}>
+                      <button onClick={() => setModalMode('image')}>画像表示に戻る</button>
+                    </div>
+                  </div>
+                  <div style={{ width: '100%', height: 'calc(100% - 48px)' }}>
+                    <PlotComponent
+                      data={traces as any}
+                      layout={layoutWithImage as any}
+                      config={{responsive: true, scrollZoom: true}}
+                      useResizeHandler
+                      style={{width: '100%', height: '100%'}}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div style={{padding:20}}>Loading interactive chart...</div>
+              )
             )}
+
           </div>
           <style>{`
             .candlestick-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:2000; }
             .candlestick-modal-content { position: relative; width: 90vw; height: 85vh; background: ${THEME.background}; border-radius:8px; overflow:hidden; }
             .modal-close { position:absolute; top:10px; right:10px; z-index:2010; background:rgba(255,255,255,0.08); color:${THEME.textColor}; border:none; width:40px; height:40px; border-radius:6px; font-size:22px; cursor:pointer; }
+            .candlestick-modal-content button { background: rgba(255,255,255,0.06); color: ${THEME.textColor}; border: none; padding: 6px 10px; border-radius:6px; cursor:pointer }
           `}</style>
         </div>
       )}
