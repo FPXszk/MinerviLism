@@ -12,15 +12,27 @@ async function capture(url, outDir) {
     throw e;
   }
 
+  async function tryGotoAndScreenshot(page, path, attempts = 3) {
+    for (let i = 1; i <= attempts; i++) {
+      try {
+        await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+        await page.screenshot({ path, fullPage: true });
+        return;
+      } catch (err) {
+        console.warn(`Attempt ${i} failed for ${path}:`, err.message || err);
+        if (i === attempts) throw err;
+        await new Promise((r) => setTimeout(r, 2000 * i));
+      }
+    }
+  }
+
   const contextDesktop = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const page = await contextDesktop.newPage();
-  await page.goto(url, { waitUntil: 'networkidle' });
-  await page.screenshot({ path: `${outDir}/desktop.png`, fullPage: true });
+  await tryGotoAndScreenshot(page, `${outDir}/desktop.png`);
 
   const contextMobile = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true });
   const page2 = await contextMobile.newPage();
-  await page2.goto(url, { waitUntil: 'networkidle' });
-  await page2.screenshot({ path: `${outDir}/mobile.png`, fullPage: true });
+  await tryGotoAndScreenshot(page2, `${outDir}/mobile.png`);
 
   await browser.close();
 }
