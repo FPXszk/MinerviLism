@@ -231,6 +231,30 @@ export function CandlestickChart({
   const traces = buildCandlestickTraces(data, markers)
   const layout = buildChartLayout(ticker, width, height)
 
+  const [showModal, setShowModal] = React.useState(false)
+  const [PlotComponent, setPlotComponent] = React.useState<any>(null)
+  const [plotError, setPlotError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    let mounted = true
+    if (!showModal) return
+    // Dynamic import react-plotly.js only when modal is opened
+    (async () => {
+      try {
+        const mod = await import('react-plotly.js')
+        if (!mounted) return
+        setPlotComponent(() => (mod && (mod.default || mod)))
+      } catch (err: any) {
+        // Import failed (likely package not installed in environment)
+        if (!mounted) return
+        setPlotError(String(err))
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [showModal])
+
   return (
     <div data-testid="candlestick-chart" style={{ width: '100%' }}>
       {data.dates.length === 0 ? (
@@ -238,14 +262,52 @@ export function CandlestickChart({
       ) : (
         <div data-testid="plotly-chart">
           {/* In production, this would use react-plotly.js Plot component */}
-          {/* <Plot data={traces} layout={layout} /> */}
+          {/* Static placeholder for testability; clicking opens interactive modal */}
           <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setShowModal(true)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setShowModal(true)}
             data-testid="chart-rendered"
             data-traces={JSON.stringify(traces.length)}
             data-ticker={ticker}
+            style={{outline: 'none', cursor: 'zoom-in'}}
           >
             Chart rendered with {traces.length} traces
           </div>
+        </div>
+      )}
+
+      {/* Full-screen interactive modal */}
+      {showModal && (
+        <div className="candlestick-modal" role="dialog" aria-modal="true">
+          <div className="candlestick-modal-content">
+            <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close">×</button>
+            {plotError ? (
+              <div style={{padding:20}}>
+                <p>Interactive chart unavailable: {plotError}</p>
+                <p>Please ensure react-plotly.js is installed in the environment.</p>
+              </div>
+            ) : PlotComponent ? (
+              // Render Plotly interactive chart
+              <div style={{width: '100%', height: '100%'}}>
+                <PlotComponent
+                  data={traces as any}
+                  layout={{...layout, autosize: true}}
+                  config={{responsive: true, scrollZoom: true}}
+                  useResizeHandler
+                  style={{width: '100%', height: '100%'}}
+                />
+              </div>
+            ) : (
+              <div style={{padding:20}}>Loading interactive chart...</div>
+            )}
+          </div>
+          <style>{`
+            .candlestick-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:2000; }
+            .candlestick-modal-content { position: relative; width: 90vw; height: 85vh; background: ${THEME.background}; border-radius:8px; overflow:hidden; }
+            .modal-close { position:absolute; top:10px; right:10px; z-index:2010; background:rgba(255,255,255,0.08); color:${THEME.textColor}; border:none; width:40px; height:40px; border-radius:6px; font-size:22px; cursor:pointer; }
+          `}</style>
         </div>
       )}
     </div>
