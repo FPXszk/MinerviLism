@@ -51,6 +51,16 @@ jobs:
           cat frontend.log || true
           cat mock-backend.log || true
           npm run screenshot:ci
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playright-logs
+          path: |
+            mock-backend.log
+            frontend.log
+
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
