@@ -10,6 +10,17 @@ Provides:
 - Backtest API router
 - Charts API router
 """
+import sys
+from pathlib import Path
+
+# Ensure backend directory and repository root are on sys.path so 'api' and 'python' packages can be imported
+FILE_PATH = Path(__file__).resolve()
+BACKEND_DIR = FILE_PATH.parent
+REPO_ROOT = FILE_PATH.parents[1]
+for _p in (str(BACKEND_DIR), str(REPO_ROOT)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
