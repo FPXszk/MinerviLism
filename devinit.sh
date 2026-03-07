@@ -86,7 +86,7 @@ start_commands() {
   frontend_cmd="cd ${PYTHON_DIR} && source ${VENV_ACTIVATE} && cd ${FRONTEND_DIR} && while true; do npm run dev -- --host 0.0.0.0 --port 3000 --strictPort 2>&1 | tee -a ${FRONTEND_LOG_FILE}; echo \"frontend crashed. restarting...\"; sleep 2; done"
   copilot_cmd="cd $(escape "${PYTHON_DIR}") && source $(escape "${VENV_ACTIVATE}") && cd $(escape "${ROOT_DIR}") && copilot --model gpt-5-mini --autopilot --yolo --allow-all --add-github-mcp-toolset all --add-dir ~/code/Invest"
   logs_cmd="cd ${ROOT_DIR} && multitail ${LOG_FILE} ${FRONTEND_LOG_FILE}"
-  git_cmd="cd $(escape "${ROOT_DIR}") && lazygit"
+  git_cmd="cd ${ROOT_DIR} && echo 'Launching lazygit...' && lazygit"
 
   tmux send-keys -t "${SESSION_NAME}:0.0" "${backend_cmd}" C-m
   tmux send-keys -t "${SESSION_NAME}:0.2" "${frontend_cmd}" C-m
