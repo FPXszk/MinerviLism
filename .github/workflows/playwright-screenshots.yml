@@ -18,6 +18,22 @@ jobs:
           npm ci
           npx playwright install-deps
           npx playwright install
+      - name: Build and start frontend preview
+        run: |
+          # Install frontend deps and build
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+          # Start a preview server in background and log output
+          npm --prefix frontend run preview -- --port 5173 > frontend.log 2>&1 &
+          # Wait for frontend ready
+          for i in $(seq 1 60); do
+            if curl -sSf http://127.0.0.1:5173/ || curl -sSf http://127.0.0.1:5173/dashboard > /dev/null; then
+              echo "frontend ready"
+              break
+            fi
+            echo "waiting for frontend... ($i)"
+            sleep 1
+          done
       - name: Start mock backend
         run: |
           npm run mock-backend > mock-backend.log 2>&1 &
@@ -32,6 +48,7 @@ jobs:
           done
       - name: Capture screenshots
         run: |
+          cat frontend.log || true
           cat mock-backend.log || true
           npm run screenshot:ci
       - name: Upload screenshots
