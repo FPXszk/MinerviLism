@@ -279,3 +279,17 @@ python main.py --mode chart --ticker AAPL --start 2023-01-01 --end 2024-01-01
 # フォールバック動作テスト
 ログ内の `[FALLBACK]` を確認
 ```
+
+# BACKTEST UI verification
+
+- Start frontend dev server:
+  npm --prefix frontend run dev
+
+- Run frontend tests (only TopBottom tests):
+  npm --prefix frontend run test -- --testNamePattern TopBottomPurchaseCharts
+
+- Capture screenshots (desktop/mobile):
+  node scripts/capture-screenshot.js --url http://localhost:5173/dashboard --out tests/screenshots --sizes "1280x720,375x812"
+
+Notes:
+- All API calls must be mocked during unit tests.
