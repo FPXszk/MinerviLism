@@ -420,24 +420,42 @@ export function CandlestickChart({
           exits = xs.map((x: any, idx: number) => ({ x, y: ys[idx] }))
         }
 
-        // Use date range from markers or fallback to sample range
-        const allDates = [...(entries || []).map((e) => e.x), ...(exits || []).map((e) => e.x)].filter(Boolean)
-        let minDate = null
-        let maxDate = null
-        if (allDates.length > 0) {
-          const parsed = allDates.map((d: any) => new Date(d))
+        // Prefer to derive date and price ranges from the candlestick trace (if available)
+        const candleTrace: any = (traces || []).find((t: any) => t && t.type === 'candlestick')
+        let minDate: any = null
+        let maxDate: any = null
+        if (candleTrace && candleTrace.x && candleTrace.x.length > 0) {
+          const parsed = candleTrace.x.map((d: any) => new Date(d))
           minDate = Math.min(...parsed.map((d) => d.getTime()))
           maxDate = Math.max(...parsed.map((d) => d.getTime()))
         } else {
-          // fallback to a simple two-point range
-          minDate = Date.now() - 1000 * 60 * 60 * 24 * 30
-          maxDate = Date.now()
+          // Fallback to marker-based range or a default 30-day window
+          const allDates = [...(entries || []).map((e) => e.x), ...(exits || []).map((e) => e.x)].filter(Boolean)
+          if (allDates.length > 0) {
+            const parsed = allDates.map((d: any) => new Date(d))
+            minDate = Math.min(...parsed.map((d) => d.getTime()))
+            maxDate = Math.max(...parsed.map((d) => d.getTime()))
+          } else {
+            minDate = Date.now() - 1000 * 60 * 60 * 24 * 30
+            maxDate = Date.now()
+          }
         }
 
-        // Price range
-        const allPrices = [...(entries || []).map((e) => e.y), ...(exits || []).map((e) => e.y)].filter((p) => Number.isFinite(p))
-        let minPrice = Math.min(...(allPrices.length ? allPrices : [0]))
-        let maxPrice = Math.max(...(allPrices.length ? allPrices : [1]))
+        // Price range: prefer candlestick highs/lows
+        let minPrice: number
+        let maxPrice: number
+        if (candleTrace && candleTrace.low && candleTrace.high && candleTrace.low.length > 0 && candleTrace.high.length > 0) {
+          const lows = candleTrace.low.map((v: any) => Number(v)).filter((n: number) => Number.isFinite(n))
+          const highs = candleTrace.high.map((v: any) => Number(v)).filter((n: number) => Number.isFinite(n))
+          const candPrices = [...lows, ...highs]
+          minPrice = Math.min(...(candPrices.length ? candPrices : [0]))
+          maxPrice = Math.max(...(candPrices.length ? candPrices : [1]))
+        } else {
+          const allPrices = [...(entries || []).map((e) => e.y), ...(exits || []).map((e) => e.y)].filter((p) => Number.isFinite(p))
+          minPrice = Math.min(...(allPrices.length ? allPrices : [0]))
+          maxPrice = Math.max(...(allPrices.length ? allPrices : [1]))
+        }
+
         if (minPrice === maxPrice) {
           minPrice = minPrice - 1
           maxPrice = maxPrice + 1
