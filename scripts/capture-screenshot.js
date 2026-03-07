@@ -16,6 +16,43 @@ async function capture(url, outDir) {
     for (let i = 1; i <= attempts; i++) {
       try {
         await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+
+        // Wait for the chart to render and be interactive
+        await page.waitForSelector('[data-testid="chart-rendered"]', { timeout: 10000 }).catch(() => null);
+
+        // Attempt to open the image modal if present
+        const opened = await (async () => {
+          try {
+            const el = await page.$('[data-testid="chart-rendered"]');
+            if (el) {
+              await el.click();
+              // Wait for modal/dialog to appear
+              await page.waitForSelector('[role="dialog"]', { timeout: 10000 });
+
+              // Wait for modal image to be loaded (naturalWidth > 0)
+              await page.waitForFunction(() => {
+                const img = document.querySelector('[data-testid="chart-modal-image"]') as HTMLImageElement | null
+                return img && img.complete && img.naturalWidth > 0
+              }, { timeout: 10000 }).catch(() => null)
+
+              return true
+            }
+          } catch (e) {
+            // ignore modal open errors
+          }
+          return false
+        })()
+
+        // If modal was opened and image loaded, take screenshot of dialog specifically
+        if (opened) {
+          const dialog = await page.$('[role="dialog"]')
+          if (dialog) {
+            await dialog.screenshot({ path })
+            return
+          }
+        }
+
+        // Fallback: full page screenshot
         await page.screenshot({ path, fullPage: true });
         return;
       } catch (err) {
