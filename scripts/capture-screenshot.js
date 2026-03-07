@@ -21,4 +21,24 @@ const argv = require('minimist')(process.argv.slice(2));
 const url = argv.url || argv.u || 'http://localhost:5173/dashboard';
 const out = argv.out || argv.o || 'tests/screenshots';
 
-capture(url, out).then(() => console.log('Screenshots saved to', out)).catch((e) => { console.error(e); process.exit(1); });
+// Ensure output directory exists and is writable before starting browsers
+(async () => {
+  try {
+    await fs.promises.mkdir(out, { recursive: true });
+  } catch (e) {
+    console.error('Failed to create screenshot output directory', e);
+    process.exit(1);
+  }
+
+  // Basic readiness check for backend
+  try {
+    const res = await fetch(url.replace('/dashboard','/api/backtest/latest'));
+    if (!res.ok) {
+      console.warn('Backend readiness check failed, continuing anyway');
+    }
+  } catch (e) {
+    console.warn('Backend readiness check error, continuing anyway:', e.message || e);
+  }
+
+  capture(url, out).then(() => console.log('Screenshots saved to', out)).catch((e) => { console.error(e); process.exit(1); });
+})();

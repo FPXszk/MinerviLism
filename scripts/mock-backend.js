@@ -38,4 +38,13 @@ app.get('/api/backtest/results/:timestamp', (req, res) => {
 });
 
 const port = process.env.PORT || 8000;
-app.listen(port, () => console.log(`Mock backend listening on ${port}`));
+const server = app.listen(port, () => console.log(`Mock backend listening on ${port}`));
+
+// Basic health endpoint for readiness checks
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// Graceful shutdown support for CI
+process.on('SIGTERM', () => {
+  console.log('Shutting down mock backend');
+  server.close(() => process.exit(0));
+});
