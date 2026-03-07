@@ -22,8 +22,28 @@ def load_trade_log(csv_path: str) -> List[Dict]:
         List of trade records as dictionaries
     """
     if not os.path.exists(csv_path):
-        logger.warning(f"Trade log not found: {csv_path}")
-        return []
+        # Attempt to find the file in the latest available backtest directory under the same output root
+        def _find_latest_csv_in_sibling_backtests(missing_path, filename):
+            parent = os.path.dirname(missing_path)
+            output_root = os.path.dirname(parent)
+            if not os.path.exists(output_root):
+                return None
+            for d in sorted(os.listdir(output_root), reverse=True):
+                candidate_dir = os.path.join(output_root, d)
+                if not os.path.isdir(candidate_dir):
+                    continue
+                candidate = os.path.join(candidate_dir, filename)
+                if os.path.exists(candidate):
+                    return candidate
+            return None
+
+        found = _find_latest_csv_in_sibling_backtests(csv_path, os.path.basename(csv_path))
+        if found:
+            logger.info(f"Trade log not found at {csv_path}, falling back to latest: {found}")
+            csv_path = found
+        else:
+            logger.warning(f"Trade log not found: {csv_path}")
+            return []
 
     try:
         df = pd.read_csv(csv_path)
@@ -46,8 +66,28 @@ def load_ticker_stats(csv_path: str) -> List[Dict]:
         List of ticker stat records as dictionaries
     """
     if not os.path.exists(csv_path):
-        logger.warning(f"Ticker stats not found: {csv_path}")
-        return []
+        # Try to locate ticker_stats in the latest backtest sibling directories
+        def _find_latest_csv_in_sibling_backtests(missing_path, filename):
+            parent = os.path.dirname(missing_path)
+            output_root = os.path.dirname(parent)
+            if not os.path.exists(output_root):
+                return None
+            for d in sorted(os.listdir(output_root), reverse=True):
+                candidate_dir = os.path.join(output_root, d)
+                if not os.path.isdir(candidate_dir):
+                    continue
+                candidate = os.path.join(candidate_dir, filename)
+                if os.path.exists(candidate):
+                    return candidate
+            return None
+
+        found = _find_latest_csv_in_sibling_backtests(csv_path, os.path.basename(csv_path))
+        if found:
+            logger.info(f"Ticker stats not found at {csv_path}, falling back to latest: {found}")
+            csv_path = found
+        else:
+            logger.warning(f"Ticker stats not found: {csv_path}")
+            return []
 
     try:
         df = pd.read_csv(csv_path)
@@ -127,8 +167,28 @@ def get_enriched_trade_markers(
         Dict with 'entries' and 'exits' lists
     """
     if not os.path.exists(csv_path):
-        logger.warning(f"Trade log not found: {csv_path}")
-        return {"entries": [], "exits": []}
+        # Try to locate trade_log in sibling backtest directories under the same output root
+        def _find_latest_csv_in_sibling_backtests(missing_path, filename):
+            parent = os.path.dirname(missing_path)
+            output_root = os.path.dirname(parent)
+            if not os.path.exists(output_root):
+                return None
+            for d in sorted(os.listdir(output_root), reverse=True):
+                candidate_dir = os.path.join(output_root, d)
+                if not os.path.isdir(candidate_dir):
+                    continue
+                candidate = os.path.join(candidate_dir, filename)
+                if os.path.exists(candidate):
+                    return candidate
+            return None
+
+        found = _find_latest_csv_in_sibling_backtests(csv_path, os.path.basename(csv_path))
+        if found:
+            logger.info(f"Trade log not found at {csv_path}, falling back to latest: {found}")
+            csv_path = found
+        else:
+            logger.warning(f"Trade log not found: {csv_path}")
+            return {"entries": [], "exits": []}
 
     try:
         df = pd.read_csv(csv_path)
