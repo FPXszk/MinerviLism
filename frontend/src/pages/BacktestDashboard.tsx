@@ -9,6 +9,7 @@ import { BacktestSummary } from '../components/BacktestSummary';
 import { TradeTable } from '../components/TradeTable';
 import { RunPanel } from '../components/RunPanel';
 import { Notification } from '../components/Notification';
+import { BacktestStatus } from '../components/BacktestStatus';
 import {
   fetchLatestBacktest,
   fetchBacktestResults,
@@ -146,7 +147,10 @@ export const BacktestDashboard: React.FC = () => {
   return (
     <div className="backtest-dashboard">
       <header className="dashboard-header">
-        <h1>{t('dashboard.title')}</h1>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          <h1>{t('dashboard.title')}</h1>
+          <BacktestStatus activeJob={activeJob} logs={jobLogs} />
+        </div>
         <button onClick={handleLoadLatest} className="button-primary" disabled={loading}>
           {loading ? t('common.loading') : t('dashboard.loadLatest')}
         </button>
