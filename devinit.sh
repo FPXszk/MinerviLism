@@ -16,12 +16,15 @@ export EDITOR=nano
 export TERM=xterm-256color
 
 # start ssh agent
-if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-  eval "$(ssh-agent -s)"
+
+# =======================================
+# ===== Robust SSH Agent Auto Start =====
+if ! ssh-add -l >/dev/null 2>&1; then
+  echo "[devinit] starting new ssh-agent..."
+  eval "$(ssh-agent -s)" >/dev/null
+  ssh-add ~/.ssh/id_ed25519 >/dev/null 2>&1 || true
 fi
-
-ssh-add -l >/dev/null 2>&1 || ssh-add ~/.ssh/id_ed25519
-
+# ================================
 echo "Copilot CLI をスマホ表示向けモードで起動しています"
 
 readonly PYTHON_DIR="${ROOT_DIR}/python"
