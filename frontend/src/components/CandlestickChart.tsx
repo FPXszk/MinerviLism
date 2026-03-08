@@ -235,39 +235,46 @@ export function CandlestickChart({
   const [PlotComponent, setPlotComponent] = React.useState<any>(null)
   const [plotError, setPlotError] = React.useState<string | null>(null)
 
+  // Period selector state (1M/3M/6M/1Y/ALL). Defaults to ALL.
+  const [period, setPeriod] = React.useState<'1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL')
+
   // Background chart image (base64 data URI) fetched from backend latest results
   const [bgImage, setBgImage] = React.useState<string | null>(null)
 
-  // Fetch latest backtest charts and pick the one corresponding to this ticker
+  // Fetch chart image for a specific period (client-side request to backend with optional range query)
+  const fetchChartForPeriod = React.useCallback(async (p: string) => {
+    try {
+      const res = await fetch(`/api/backtest/latest?range=${encodeURIComponent(p)}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const charts = (data && (data as any).charts) || {}
+      const keys = Object.keys(charts || {})
+      let key = keys.find((k) => k === `${ticker}_price_chart`) || keys.find((k) => k === ticker) || keys.find((k) => k.includes(ticker)) || keys.find((k) => k.includes('_price_chart'))
+      if (!key && keys.length > 0) key = keys[0]
+      if (key && charts[key]) setBgImage(charts[key])
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to fetch chart for period', e)
+    }
+  }, [ticker])
+
+  // Fetch latest backtest charts and pick the one corresponding to this ticker or selected period
   React.useEffect(() => {
     let mounted = true
-    async function fetchChartImage() {
+    async function run() {
       try {
-        const res = await fetch('/api/backtest/latest')
-        if (!res.ok) return
-        const data = await res.json()
-        const charts = (data && (data as any).charts) || {}
-        const keys = Object.keys(charts || {})
-        // Prefer explicit '{ticker}_price_chart', then exact ticker, then any key containing ticker
-        let key = keys.find((k) => k === `${ticker}_price_chart`) || keys.find((k) => k === ticker) || keys.find((k) => k.includes(ticker)) || keys.find((k) => k.includes('_price_chart'))
-        // Fallback: if no per-ticker chart, use the first available chart (e.g., equity_curve)
-        if (!key && keys.length > 0) key = keys[0]
-        if (key && charts[key]) {
-          if (!mounted) return
-          setBgImage(charts[key])
-        }
+        await fetchChartForPeriod(period)
       } catch (e) {
-        // Non-fatal - background image is optional
         // eslint-disable-next-line no-console
-        console.warn('Failed to fetch chart image for background', e)
+        console.warn('fetchChartForPeriod failed', e)
       }
     }
 
-    fetchChartImage()
+    run()
     return () => {
       mounted = false
     }
-  }, [ticker])
+  }, [ticker, period, fetchChartForPeriod])
 
   // Load Plotly component lazily on mount so preview can render markers over image
   React.useEffect(() => {
@@ -547,6 +554,29 @@ export function CandlestickChart({
 
   return (
     <div data-testid="candlestick-chart" style={{ width: '100%' }}>
+      {/* Period selector (client-side for now). Backend may honor ?range= in future. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <label style={{ color: THEME.textColor }}>Period:</label>
+        <select
+          aria-label="Chart period"
+          value={period}
+          onChange={(e) => {
+            const v = e.target.value as any
+            setPeriod(v)
+          }}
+          style={{ padding: '6px 8px', borderRadius: 6 }}
+        >
+          <option value="1M">1M</option>
+          <option value="3M">3M</option>
+          <option value="6M">6M</option>
+          <option value="1Y">1Y</option>
+          <option value="ALL">All</option>
+        </select>
+        <div style={{ marginLeft: 'auto', color: 'rgba(209,212,220,0.9)' }}>
+          {period === 'ALL' ? 'Full range' : period}
+        </div>
+      </div>
+
       {data.dates.length === 0 ? (
         <p data-testid="no-data-message">No chart data available</p>
       ) : (
