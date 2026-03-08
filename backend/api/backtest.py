@@ -442,26 +442,34 @@ def get_ohlc(ticker: str, range: Optional[str] = None, start_date: Optional[str]
 
     # Use python.backtest.ticker_charts to fetch via yfinance when available
     try:
-        import sys
+        # Import ticker_charts by file path to avoid executing python.backtest __init__ which pulls other modules
+        import importlib.util
         from pathlib import Path as _Path
         _repo_root = str(_Path(__file__).resolve().parents[2])
-        if _repo_root not in sys.path:
-            sys.path.insert(0, _repo_root)
-        from python.backtest import ticker_charts as tc
+        tc_path = os.path.join(_repo_root, 'python', 'backtest', 'ticker_charts.py')
+        spec = importlib.util.spec_from_file_location('ticker_charts_module', tc_path)
+        tc = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tc)
+
         if not getattr(tc, 'YFINANCE_AVAILABLE', False):
             raise RuntimeError('yfinance not available in environment')
-        # fetch
+
+        # fetch via yfinance inside the ticker_charts module
         stock = tc.yf.Ticker(ticker)
         df = stock.history(start=start_date, end=end_date)
         if df is None or df.empty:
-            return { 'data': [] }
+            return {'data': []}
+
         # normalize index and columns
         df.reset_index(inplace=True)
-        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+        # Determine date column name if different
+        date_col = 'Date' if 'Date' in df.columns else df.columns[0]
+        df[date_col] = pd.to_datetime(df[date_col]).dt.strftime('%Y-%m-%d')
+
         data = []
         for _, row in df.iterrows():
             data.append({
-                'time': row['Date'],
+                'time': row[date_col],
                 'open': None if pd.isna(row.get('Open')) else float(row.get('Open')),
                 'high': None if pd.isna(row.get('High')) else float(row.get('High')),
                 'low': None if pd.isna(row.get('Low')) else float(row.get('Low')),
