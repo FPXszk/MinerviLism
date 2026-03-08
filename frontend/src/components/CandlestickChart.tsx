@@ -237,6 +237,8 @@ export function CandlestickChart({
 
   // Period selector state (1M/3M/6M/1Y/ALL). Defaults to ALL.
   const [period, setPeriod] = React.useState<'1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL')
+  // Year quick selector (used to request pre-generated backtests like 2022/2023/2024/2025)
+  const [year, setYear] = React.useState<string | null>(null)
 
   // Background chart image (base64 data URI) fetched from backend latest results
   const [bgImage, setBgImage] = React.useState<string | null>(null)
@@ -572,8 +574,36 @@ export function CandlestickChart({
           <option value="1Y">1Y</option>
           <option value="ALL">All</option>
         </select>
+
+        {/* Year quick selector for convenient one-click backtests (2022-2025) */}
+        <label style={{ color: THEME.textColor, marginLeft: 6 }}>Year:</label>
+        <div role="group" aria-label="Year selector" style={{ display: 'flex', gap: 6 }}>
+          {['2022', '2023', '2024', '2025'].map((y) => (
+            <button
+              key={y}
+              onClick={() => {
+                setYear(y)
+                // keep full-range period when selecting a year
+                setPeriod('ALL')
+                // request backend for that year's pre-generated backtest
+                fetchChartForPeriod(y)
+              }}
+              style={{
+                padding: '6px 8px',
+                borderRadius: 6,
+                background: year === y ? '#243447' : 'transparent',
+                color: THEME.textColor,
+                border: '1px solid rgba(255,255,255,0.06)'
+              }}
+              aria-pressed={year === y}
+            >
+              {y}
+            </button>
+          ))}
+        </div>
+
         <div style={{ marginLeft: 'auto', color: 'rgba(209,212,220,0.9)' }}>
-          {period === 'ALL' ? 'Full range' : period}
+          {period === 'ALL' ? (year ? year : 'Full range') : period}
         </div>
       </div>
 
