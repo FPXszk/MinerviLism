@@ -192,11 +192,17 @@ def list_backtests():
 
 
 @router.get("/latest")
-def get_latest_results() -> BacktestResultsResponse:
-    """Get the latest backtest results."""
+def get_latest_results(range: Optional[str] = None) -> BacktestResultsResponse:
+    """Get the latest backtest results or a range-specific backtest.
+
+    Query parameters:
+    - range: optional string used to select a backtest directory. If the string
+      is found as a substring in an existing backtest directory name, that
+      directory will be returned. Special value 'ALL' returns the latest.
+    """
     output_dir = DEFAULT_OUTPUT_DIR
     
-    # Find the latest backtest directory
+    # Ensure output directory exists
     if not os.path.exists(output_dir):
         raise HTTPException(status_code=404, detail="No backtest results found")
     
@@ -204,7 +210,30 @@ def get_latest_results() -> BacktestResultsResponse:
         dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
         if not dirs:
             raise HTTPException(status_code=404, detail="No backtest results found")
-        
+
+        # If a range parameter was provided, attempt to find a matching directory
+        if range:
+            # Normalize
+            r = range.strip()
+            # If user asked for ALL, return latest
+            if r.upper() == "ALL":
+                chosen = dirs[0]
+                return _get_backtest_results_by_dir(os.path.join(output_dir, chosen), chosen)
+
+            # Try to match directories that contain the range string
+            candidates = [d for d in dirs if r in d]
+            if candidates:
+                chosen = candidates[0]
+                return _get_backtest_results_by_dir(os.path.join(output_dir, chosen), chosen)
+
+            # If range looks like a 4-digit year, try match backtest_YYYY
+            if len(r) == 4 and r.isdigit():
+                year_candidates = [d for d in dirs if f"backtest_{r}-" in d]
+                if year_candidates:
+                    chosen = year_candidates[0]
+                    return _get_backtest_results_by_dir(os.path.join(output_dir, chosen), chosen)
+
+            # No match found; fall back to latest
         latest_dir = dirs[0]
         return _get_backtest_results_by_dir(os.path.join(output_dir, latest_dir), latest_dir)
     except HTTPException:
