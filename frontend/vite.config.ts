@@ -15,6 +15,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Split large TopBottomPurchaseCharts into its own chunk to reduce initial bundle size
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('TopBottomPurchaseCharts')) return 'top-bottom-chart';
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

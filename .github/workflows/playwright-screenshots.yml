@@ -17,7 +17,8 @@ jobs:
         run: |
           sudo apt-get update
           # Install Playwright system dependencies that are sometimes missing on runners
-          sudo apt-get install -y libnspr4 libnss3 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2 libpangocairo-1.0-0 libgtk-3-0 libxshmfence1 fonts-liberation || true
+          sudo apt-get install -y libnspr4 libnss3 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxss1 libasound2 libpangocairo-1.0-0 libgtk-3-0 libatk-bridge2.0-0 libxshmfence1 fonts-liberation || true
+
           npm ci
           npx playwright install-deps || true
           npx playwright install || true
