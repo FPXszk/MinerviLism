@@ -36,9 +36,7 @@
 ---
 ## 長期記憶・文脈維持ルール（Long-Term Context Management）
 
-- セッション内の記憶が十分な間は `docs/working-memory/` を参照しない。
-- セッション記憶が不足した場合のみ、`docs/DOCUMENTATION_SYSTEM.md` に定義された優先順位で `docs/decision-log/`、`docs/working-memory/`、`docs/exec-plans/active/` を参照する。
-- 長時間の作業終了時は、`docs/DOCUMENTATION_SYSTEM.md` に定義された更新義務に従って記録を更新する。
+このプロジェクトの長期記憶・文脈維持ルールは docs/DOCUMENTATION_SYSTEM.md に正本があります。詳細な運用手順と参照優先順位はそちらを参照してください。
 
 ---
 
