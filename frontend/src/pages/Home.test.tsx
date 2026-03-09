@@ -1,35 +1,156 @@
-/**
- * Tests for Home page
- */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Home } from './Home'
 
-// Mock the API client
+const { runBacktestMock, getTopBottomTickersMock } = vi.hoisted(() => ({
+  runBacktestMock: vi.fn(),
+  getTopBottomTickersMock: vi.fn(),
+}))
+
 vi.mock('../api/client', () => ({
-  runBacktest: vi.fn().mockResolvedValue({ status: 'started', message: 'Backtest started' }),
-  getTopBottomTickers: vi.fn().mockResolvedValue({ top: [], bottom: [] }),
+  runBacktest: runBacktestMock,
+  getTopBottomTickers: getTopBottomTickersMock,
+}))
+
+vi.mock('../components/BacktestForm', () => ({
+  BacktestForm: ({
+    onSubmit,
+    isLoading,
+  }: {
+    onSubmit: (startDate: string, endDate: string) => Promise<void>
+    isLoading?: boolean
+  }) => (
+    <button
+      type="button"
+      data-testid="backtest-form-submit"
+      disabled={Boolean(isLoading)}
+      onClick={() => void onSubmit('2024-01-01', '2024-01-31')}
+    >
+      Run mocked backtest
+    </button>
+  ),
+}))
+
+vi.mock('../components/TickerList', () => ({
+  TickerList: ({
+    title,
+    tickers,
+    onTickerClick,
+    variant,
+  }: {
+    title: string
+    tickers: Array<{ ticker: string }>
+    onTickerClick?: (ticker: string) => void
+    variant?: string
+  }) => (
+    <section data-testid={`${variant ?? 'default'}-list`}>
+      <h2>{title}</h2>
+      {tickers.length === 0 && <span>No data available</span>}
+      {tickers.map((ticker) => (
+        <button key={ticker.ticker} type="button" onClick={() => onTickerClick?.(ticker.ticker)}>
+          {ticker.ticker}
+        </button>
+      ))}
+    </section>
+  ),
 }))
 
 describe('Home', () => {
-  it('renders the page title', () => {
+  beforeEach(() => {
+    runBacktestMock.mockReset()
+    getTopBottomTickersMock.mockReset()
+    runBacktestMock.mockResolvedValue({ message: 'Backtest started' })
+    getTopBottomTickersMock.mockResolvedValue({ top: [], bottom: [] })
+  })
+
+  it('loads top and bottom tickers on mount', async () => {
+    getTopBottomTickersMock.mockResolvedValue({
+      top: [{ ticker: 'AAPL', total_pnl: 100, num_trades: null, win_rate: null }],
+      bottom: [{ ticker: 'TSLA', total_pnl: -50, num_trades: 1, win_rate: 0.3 }],
+    })
+
     render(<Home />)
+
+    await waitFor(() => expect(getTopBottomTickersMock).toHaveBeenCalledTimes(1))
+
+    expect(screen.getByText('Invest Backtest')).toBeInTheDocument()
+    expect(screen.getByText('AAPL')).toBeInTheDocument()
+    expect(screen.getByText('TSLA')).toBeInTheDocument()
+  })
+
+  it('submits a backtest and refreshes ticker lists', async () => {
+    const user = userEvent.setup()
+
+    render(<Home />)
+
+    await waitFor(() => expect(getTopBottomTickersMock).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByTestId('backtest-form-submit'))
+
+    await waitFor(() =>
+      expect(runBacktestMock).toHaveBeenCalledWith({
+        start_date: '2024-01-01',
+        end_date: '2024-01-31',
+      }),
+    )
+
+    expect(await screen.findByTestId('status-message')).toHaveTextContent('Backtest started')
+    expect(getTopBottomTickersMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows an error message when backtest submission fails', async () => {
+    const user = userEvent.setup()
+    runBacktestMock.mockRejectedValueOnce(new Error('boom'))
+
+    render(<Home />)
+
+    await waitFor(() => expect(getTopBottomTickersMock).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByTestId('backtest-form-submit'))
+
+    expect(await screen.findByTestId('status-message')).toHaveTextContent(
+      'Backtest failed. Please try again.',
+    )
+  })
+
+  it('keeps the page rendered when ticker loading fails', async () => {
+    getTopBottomTickersMock.mockRejectedValueOnce(new Error('network'))
+
+    render(<Home />)
+
+    await waitFor(() => expect(getTopBottomTickersMock).toHaveBeenCalledTimes(1))
+
+    expect(screen.getByTestId('home-page')).toBeInTheDocument()
     expect(screen.getByText('Invest Backtest')).toBeInTheDocument()
   })
 
-  it('renders the backtest form', () => {
-    render(<Home />)
-    expect(screen.getByTestId('backtest-form')).toBeInTheDocument()
+  it('navigates when a ticker is clicked and a callback is provided', async () => {
+    const user = userEvent.setup()
+    const onNavigateToChart = vi.fn()
+    getTopBottomTickersMock.mockResolvedValue({
+      top: [{ ticker: 'AAPL', total_pnl: 100 }],
+      bottom: [],
+    })
+
+    render(<Home onNavigateToChart={onNavigateToChart} />)
+
+    await waitFor(() => expect(getTopBottomTickersMock).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'AAPL' }))
+
+    expect(onNavigateToChart).toHaveBeenCalledWith('AAPL')
   })
 
-  it('renders ticker lists', () => {
-    render(<Home />)
-    expect(screen.getByText('Top 5 Winners')).toBeInTheDocument()
-    expect(screen.getByText('Bottom 5 Losers')).toBeInTheDocument()
-  })
+  it('does not fail when a ticker is clicked without a callback', async () => {
+    const user = userEvent.setup()
+    getTopBottomTickersMock.mockResolvedValue({
+      top: [{ ticker: 'AAPL', total_pnl: 100 }],
+      bottom: [],
+    })
 
-  it('renders home page data-testid', () => {
     render(<Home />)
+
+    await waitFor(() => expect(getTopBottomTickersMock).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'AAPL' }))
+
     expect(screen.getByTestId('home-page')).toBeInTheDocument()
   })
 })

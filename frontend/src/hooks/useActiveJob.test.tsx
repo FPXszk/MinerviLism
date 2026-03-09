@@ -75,4 +75,42 @@ describe('useActiveJob', () => {
     expect(result.current.activeJob?.job_id).toBe('job-2')
     expect(result.current.logs).toEqual(['done'])
   })
+
+  it('ignores empty job ids and transient polling failures', async () => {
+    vi.mocked(getJob)
+      .mockResolvedValueOnce({
+        job_id: 'job-3',
+        command: 'full',
+        command_line: 'python main.py --mode full',
+        status: 'running',
+        created_at: '2026-01-01T00:00:00Z',
+        timeout_seconds: 7200,
+      })
+      .mockRejectedValueOnce(new Error('poll failed'))
+    vi.mocked(getJobLogs).mockResolvedValue({
+      job_id: 'job-3',
+      status: 'running',
+      lines: ['queued'],
+    })
+
+    const { result } = renderHook(() => useActiveJob(1000))
+
+    await act(async () => {
+      await result.current.startMonitoring('')
+    })
+    expect(getJob).not.toHaveBeenCalled()
+
+    await act(async () => {
+      await result.current.startMonitoring('job-3')
+      await Promise.resolve()
+    })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000)
+      await Promise.resolve()
+    })
+
+    expect(result.current.activeJob?.job_id).toBe('job-3')
+    expect(result.current.logs).toEqual(['queued'])
+  })
 })

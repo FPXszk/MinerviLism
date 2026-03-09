@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
+
+      - name: Create Python virtual environment
+        run: python -m venv python/.venv
+
+      - name: Install Python dependencies
+        run: python/.venv/bin/pip install -r python/requirements.txt
+
+      - name: Run backend tests with coverage gate
+        run: |
+          source python/.venv/bin/activate
+          pytest backend/tests --cov=backend --cov-report=term --cov-fail-under=80
+        shell: bash
+
+      - name: Verify generated API contracts are up to date
+        run: |
+          source python/.venv/bin/activate
+          python -m backend.scripts.export_frontend_contracts
+          git diff --exit-code -- frontend/src/api/generated/contracts.ts
+        shell: bash
+
+      - name: Run frontend build
+        run: npm --prefix frontend run build
+
+      - name: Run frontend tests with coverage gate
+        run: npm --prefix frontend run test:coverage
+
+      - name: Run fixture-backed E2E test
+        run: npm run test:e2e
+
+      - name: Run root build
+        run: npm run build
+
+  docker-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docker compose config
+        run: docker compose config
+
+      - name: Build docker compose services
+        run: docker compose build

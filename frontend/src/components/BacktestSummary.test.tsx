@@ -1,0 +1,57 @@
+import { describe, expect, it } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { BacktestSummary } from './BacktestSummary'
+
+describe('BacktestSummary', () => {
+  it('shows a loading state', () => {
+    render(<BacktestSummary data={null} loading />)
+
+    expect(screen.getByText('Loading metrics...')).toBeInTheDocument()
+  })
+
+  it('shows an empty state when no summary is available', () => {
+    render(<BacktestSummary data={null} />)
+
+    expect(screen.getByText('No data available')).toBeInTheDocument()
+  })
+
+  it('renders formatted metrics and a positive profit factor', () => {
+    render(
+      <BacktestSummary
+        data={{
+          total_trades: 12,
+          winning_trades: 7,
+          losing_trades: 5,
+          win_rate: 0.5833,
+          total_pnl: 1500,
+          avg_win: 300,
+          avg_loss: -100,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('Total P&L')).toBeInTheDocument()
+    expect(screen.getByText('$1,500.00')).toBeInTheDocument()
+    expect(screen.getByText('58.33%')).toBeInTheDocument()
+    expect(screen.getByText('7W / 5L')).toBeInTheDocument()
+    expect(screen.getByText('3.00')).toBeInTheDocument()
+  })
+
+  it('falls back to N/A when profit factor cannot be calculated', () => {
+    render(
+      <BacktestSummary
+        data={{
+          total_trades: 2,
+          winning_trades: 1,
+          losing_trades: 1,
+          win_rate: 0.5,
+          total_pnl: -20,
+          avg_win: 10,
+          avg_loss: 0,
+        }}
+      />,
+    )
+
+    expect(screen.getByText('N/A')).toBeInTheDocument()
+  })
+})

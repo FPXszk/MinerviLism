@@ -68,4 +68,28 @@ describe('jobs api', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://example.test/api/jobs/job-5/cancel', { method: 'POST' })
     expect(payload.status).toBe('cancelled')
   })
+
+  it('throws when fetching a job fails', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 404 })
+
+    await expect(getJob('missing')).rejects.toThrow('Failed to fetch job: 404')
+  })
+
+  it('throws when listing jobs fails', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 503 })
+
+    await expect(listJobs()).rejects.toThrow('Failed to list jobs: 503')
+  })
+
+  it('throws when fetching logs fails', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 500 })
+
+    await expect(getJobLogs('job-4')).rejects.toThrow('Failed to fetch logs: 500')
+  })
+
+  it('throws when cancelling a job fails', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 409 })
+
+    await expect(cancelJob('job-5')).rejects.toThrow('Failed to cancel job: 409')
+  })
 })

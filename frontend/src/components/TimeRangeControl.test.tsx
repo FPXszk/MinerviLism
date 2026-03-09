@@ -2,7 +2,7 @@
  * Tests for TimeRangeControl component (Phase C)
  */
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
   TimeRangeControl,
@@ -53,11 +53,51 @@ describe('TimeRangeControl Component', () => {
     expect(screen.getByTestId('custom-end')).toBeInTheDocument()
   })
 
+  it('propagates custom start and end date changes', async () => {
+    const mockChange = vi.fn()
+
+    render(
+      <TimeRangeControl
+        mode="custom"
+        onModeChange={vi.fn()}
+        customRange={{ start: '2024-01-01', end: '2024-12-31' }}
+        onCustomRangeChange={mockChange}
+      />,
+    )
+
+    fireEvent.change(screen.getByTestId('custom-start'), { target: { value: '2024-02-01' } })
+    expect(mockChange).toHaveBeenLastCalledWith({
+      start: '2024-02-01',
+      end: '2024-12-31',
+    })
+
+    fireEvent.change(screen.getByTestId('custom-end'), { target: { value: '2024-11-30' } })
+    expect(mockChange).toHaveBeenLastCalledWith({
+      start: '2024-01-01',
+      end: '2024-11-30',
+    })
+  })
+
   it('hides custom date inputs when mode is not custom', () => {
     render(
       <TimeRangeControl mode="full" onModeChange={vi.fn()} />,
     )
     expect(screen.queryByTestId('custom-range-inputs')).not.toBeInTheDocument()
+  })
+
+  it('renders empty custom inputs and tolerates a missing custom change handler', () => {
+    render(
+      <TimeRangeControl mode="custom" onModeChange={vi.fn()} />,
+    )
+
+    expect(screen.getByTestId('custom-start')).toHaveValue('')
+    expect(screen.getByTestId('custom-end')).toHaveValue('')
+
+    fireEvent.change(screen.getByTestId('custom-start'), { target: { value: '2024-03-01' } })
+    fireEvent.change(screen.getByTestId('custom-end'), { target: { value: '2024-03-31' } })
+
+    expect(screen.getByTestId('custom-start')).toHaveValue('')
+    expect(screen.getByTestId('custom-end')).toHaveValue('')
   })
 
   it('disables auto-focus when no trade range', () => {
@@ -76,6 +116,18 @@ describe('TimeRangeControl Component', () => {
       />,
     )
     expect(screen.getByTestId('mode-auto-focus')).not.toBeDisabled()
+  })
+
+  it('marks auto-focus as active when selected', () => {
+    render(
+      <TimeRangeControl
+        mode="auto-focus"
+        onModeChange={vi.fn()}
+        tradeRange={{ firstEntry: '2024-03-15', lastExit: '2024-09-30' }}
+      />,
+    )
+
+    expect(screen.getByTestId('mode-auto-focus')).toHaveAttribute('aria-pressed', 'true')
   })
 })
 

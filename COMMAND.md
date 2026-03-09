@@ -111,6 +111,7 @@ cd ~/code/Invest/python
 source .venv/bin/activate
 cd ~/code/Invest
 pytest backend/tests -q
+pytest backend/tests --cov=backend --cov-report=term --cov-fail-under=80
 ```
 
 frontend:
@@ -122,12 +123,30 @@ npm --prefix frontend run test -- --run
 npm --prefix frontend run test:coverage
 ```
 
+contract drift:
+
+```bash
+cd ~/code/Invest/python
+source .venv/bin/activate
+cd ~/code/Invest
+python -m backend.scripts.export_frontend_contracts
+git diff -- frontend/src/api/generated/contracts.ts
+```
+
 full stack / Electron:
 
 ```bash
 cd ~/code/Invest
 npm run test:e2e
 npm run build
+```
+
+Docker / CI 相当確認:
+
+```bash
+cd ~/code/Invest
+docker compose config
+docker compose build
 ```
 
 ## 9. よく使う just コマンド

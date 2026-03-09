@@ -78,13 +78,13 @@ export function Home({ onNavigateToChart }: HomeProps) {
         <TickerList
           title={t('home.topWinners')}
           tickers={topTickers}
-          onTickerClick={onNavigateToChart}
+          onTickerClick={handleTickerClick}
           variant="winners"
         />
         <TickerList
           title={t('home.bottomLosers')}
           tickers={bottomTickers}
-          onTickerClick={onNavigateToChart}
+          onTickerClick={handleTickerClick}
           variant="losers"
         />
       </section>
