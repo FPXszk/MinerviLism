@@ -1,0 +1,5 @@
+date,action,ticker,price,shares,pnl
+2026-01-03,ENTRY,AAA,100,2,0
+2026-01-10,EXIT,AAA,110,2,20
+2026-01-05,ENTRY,CCC,50,4,0
+2026-01-09,EXIT,CCC,45,4,-20

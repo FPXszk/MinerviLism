@@ -1,19 +1,19 @@
 {
-"compilerOptions": {
-"target": "ES2022",
-"module": "CommonJS",
-"lib": ["ES2022"],
-"outDir": "dist",
-"rootDir": "src",
-"moduleResolution": "node",
-"resolveJsonModule": true,
-"esModuleInterop": true,
-"allowSyntheticDefaultImports": true,
-"strict": true,
-"skipLibCheck": true,
-"sourceMap": true,
-"types": ["node"]
-},
-"include": ["src/**/*.ts"],
-"exclude": ["renderer", "renderer-dist", "dist", "release", "node_modules"]
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "rootDir": "electron",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["electron/**/*.ts"],
+  "exclude": ["renderer-dist", "dist", "release", "node_modules"]
 }

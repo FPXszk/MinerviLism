@@ -59,12 +59,12 @@ export const TradeTable: React.FC<TradeTableProps> = ({ trades, loading = false 
     setPage(0);
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-    }).format(value);
+    }).format(value ?? 0);
   };
 
   if (loading) {
@@ -115,18 +115,18 @@ export const TradeTable: React.FC<TradeTableProps> = ({ trades, loading = false 
             {paginatedTrades.map((trade, idx) => (
               <tr key={idx}>
                 <td className="ticker">{trade.ticker}</td>
-                <td>{trade.entry_date}</td>
+                <td>{trade.entry_date ?? '-'}</td>
                 <td className="number">{formatCurrency(trade.entry_price)}</td>
-                <td>{trade.exit_date}</td>
+                <td>{trade.exit_date ?? '-'}</td>
                 <td className="number">{formatCurrency(trade.exit_price)}</td>
-                <td className="number">{trade.shares}</td>
-                <td className={`number ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
+                <td className="number">{trade.shares ?? '-'}</td>
+                <td className={`number ${(trade.pnl ?? 0) >= 0 ? 'positive' : 'negative'}`}>
                   {formatCurrency(trade.pnl)}
                 </td>
-                <td className={`number ${trade.pnl_pct >= 0 ? 'positive' : 'negative'}`}>
-                  {(trade.pnl_pct * 100).toFixed(2)}%
+                <td className={`number ${(trade.pnl_pct ?? 0) >= 0 ? 'positive' : 'negative'}`}>
+                  {((trade.pnl_pct ?? 0) * 100).toFixed(2)}%
                 </td>
-                <td className="reason">{trade.exit_reason}</td>
+                <td className="reason">{trade.exit_reason ?? '-'}</td>
               </tr>
             ))}
           </tbody>

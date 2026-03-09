@@ -33,6 +33,16 @@ export const BacktestSummary: React.FC<BacktestSummaryProps> = ({ data, loading 
     );
   }
 
+  const summary = {
+    total_trades: data.total_trades ?? 0,
+    winning_trades: data.winning_trades ?? 0,
+    losing_trades: data.losing_trades ?? 0,
+    win_rate: data.win_rate ?? 0,
+    total_pnl: data.total_pnl ?? 0,
+    avg_win: data.avg_win ?? 0,
+    avg_loss: data.avg_loss ?? 0,
+  }
+
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -43,8 +53,8 @@ export const BacktestSummary: React.FC<BacktestSummaryProps> = ({ data, loading 
   const formatPercent = (value: number) => (value * 100).toFixed(2) + '%';
 
   const profitFactor =
-    data.avg_win !== 0 && data.avg_loss !== 0
-      ? (Math.abs(data.avg_win) / Math.abs(data.avg_loss)).toFixed(2)
+    summary.avg_win !== 0 && summary.avg_loss !== 0
+      ? (Math.abs(summary.avg_win) / Math.abs(summary.avg_loss)).toFixed(2)
       : 'N/A';
 
   return (
@@ -52,29 +62,29 @@ export const BacktestSummary: React.FC<BacktestSummaryProps> = ({ data, loading 
       <div className="metrics-grid">
         <MetricCard
           label={t('summary.totalPnl')}
-          value={formatCurrency(data.total_pnl)}
-          trend={data.total_pnl >= 0 ? 'positive' : 'negative'}
+          value={formatCurrency(summary.total_pnl)}
+          trend={summary.total_pnl >= 0 ? 'positive' : 'negative'}
         />
         <MetricCard
           label={t('summary.totalTrades')}
-          value={String(data.total_trades)}
+          value={String(summary.total_trades)}
           trend="neutral"
         />
         <MetricCard
           label={t('summary.winRate')}
-          value={formatPercent(data.win_rate)}
-          subText={t('summary.winLossCompact', { wins: data.winning_trades, losses: data.losing_trades })}
-          trend={data.win_rate >= 0.5 ? 'positive' : 'negative'}
+          value={formatPercent(summary.win_rate)}
+          subText={t('summary.winLossCompact', { wins: summary.winning_trades, losses: summary.losing_trades })}
+          trend={summary.win_rate >= 0.5 ? 'positive' : 'negative'}
         />
         <MetricCard
           label={t('summary.avgWin')}
-          value={formatCurrency(data.avg_win)}
-          trend={data.avg_win >= 0 ? 'positive' : 'negative'}
+          value={formatCurrency(summary.avg_win)}
+          trend={summary.avg_win >= 0 ? 'positive' : 'negative'}
         />
         <MetricCard
           label={t('summary.avgLoss')}
-          value={formatCurrency(data.avg_loss)}
-          trend={data.avg_loss >= 0 ? 'positive' : 'negative'}
+          value={formatCurrency(summary.avg_loss)}
+          trend={summary.avg_loss >= 0 ? 'positive' : 'negative'}
         />
         <MetricCard
           label={t('summary.profitFactor')}

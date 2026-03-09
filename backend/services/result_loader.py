@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 import pandas as pd
 from loguru import logger
 
+from services.result_store import ResultStore
+
 
 def load_trade_log(csv_path: str) -> List[Dict]:
     """
@@ -291,70 +293,7 @@ def list_available_backtests(output_dir: str) -> List[Dict]:
     Returns:
         List of backtest metadata dictionaries
     """
-    if not os.path.exists(output_dir):
-        logger.warning(f"Output directory not found: {output_dir}")
-        return []
-
-    backtests = []
-    try:
-        for dir_name in sorted(os.listdir(output_dir), reverse=True):
-            dir_path = os.path.join(output_dir, dir_name)
-            if not os.path.isdir(dir_path):
-                continue
-
-            # Parse timestamp from directory name
-            # Format: backtest_YYYY-MM-DD_to_YYYY-MM-DD_YYYYmmdd-HHMMSS
-            if not dir_name.startswith("backtest_"):
-                continue
-
-            try:
-                parts = dir_name.replace("backtest_", "").split("_to_")
-                if len(parts) < 2:
-                    continue
-
-                start_date = parts[0]
-                remaining = parts[1]
-                end_date_parts = remaining.split("_")
-                end_date = end_date_parts[0]
-                timestamp = "_".join(end_date_parts[1:]) if len(end_date_parts) > 1 else ""
-
-                # Load statistics from CSV
-                ticker_stats_path = os.path.join(dir_path, "ticker_stats.csv")
-                trade_count = 0
-                if os.path.exists(ticker_stats_path):
-                    try:
-                        df = pd.read_csv(ticker_stats_path)
-                        trade_count = len(df)
-                    except Exception:
-                        pass
-
-                backtests.append({
-                    "timestamp": timestamp,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "period": f"{start_date} to {end_date}",
-                    "trade_count": trade_count,
-                    "dir_name": dir_name,
-                })
-            except Exception as e:
-                logger.warning(f"Failed to parse backtest directory {dir_name}: {e}")
-                continue
-
-        # Filter to allowed years (2020-2025) as a temporary restriction per user request
-        try:
-            allowed_years = {str(y) for y in range(2020, 2026)}
-            filtered = []
-            for b in backtests:
-                sd = b.get('start_date', '')
-                year = sd.split('-')[0] if sd else ''
-                if year in allowed_years:
-                    filtered.append(b)
-            return filtered
-        except Exception:
-            return backtests
-    except Exception as e:
-        logger.error(f"Failed to list backtests: {e}")
-        return []
+    return ResultStore(output_dir).list_backtests()
 
 
 def load_backtest_summary(output_dir: str) -> Dict:

@@ -9,6 +9,7 @@
  * - Zoom and pan
  */
 import React from 'react'
+import { buildApiUrl } from '../api/base'
 
 export interface CandlestickData {
   dates: string[]
@@ -249,7 +250,7 @@ export function CandlestickChart({
   // Fetch chart image for a specific period (client-side request to backend with optional range query)
   const fetchChartForPeriod = React.useCallback(async (p: string) => {
     try {
-      const res = await fetch(`/api/backtest/latest?range=${encodeURIComponent(p)}`)
+      const res = await fetch(buildApiUrl(`/backtest/latest?range=${encodeURIComponent(p)}`))
       if (!res.ok) return
       const data = await res.json()
       const charts = (data && (data as any).charts) || {}
@@ -266,7 +267,7 @@ export function CandlestickChart({
   // Fetch OHLC JSON for interactive chart when a specific year is selected
   const fetchOhlcForYear = React.useCallback(async (y: string) => {
     try {
-      const res = await fetch(`/api/backtest/ohlc?ticker=${encodeURIComponent(ticker)}&range=${encodeURIComponent(y)}`)
+      const res = await fetch(buildApiUrl(`/backtest/ohlc?ticker=${encodeURIComponent(ticker)}&range=${encodeURIComponent(y)}`))
       if (!res.ok) {
         console.warn('OHLC fetch returned', res.status)
         setOhlcData(null)

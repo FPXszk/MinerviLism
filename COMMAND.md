@@ -1,86 +1,143 @@
 # COMMAND.md
-Invest プロジェクト — 実行コマンド集
 
----
+Invest プロジェクトの主要コマンド集です。すべてリポジトリルート `~/code/Invest` を基準にしています。
 
-## 1) 環境の一括起動（推奨）
-リポジトリルートで tmux による開発環境を一括起動する場合:
+## 1. 開発環境をまとめて起動
 
-```
-wsl
+```bash
 cd ~/code/Invest/python
-source ./.venv/bin/activate
+source .venv/bin/activate
 cd ~/code/Invest
 just dev
 ```
 
+停止とログ確認:
+
+```bash
+just stop
+just logs
 ```
-# tmux の全セッションを終了（完全停止）
-tmux kill-server
-# 特定セッションだけ終了
-tmux kill-session -t invest
-# tmux のデタッチ
-tmux detach
-# tmux の全クライアントを強制デタッチ
-tmux detach-client -a
-# tmux 確認
+
+tmux を直接操作する場合:
+
+```bash
 tmux ls
+tmux detach
+tmux kill-session -t invest
+tmux kill-server
 ```
 
-- `just dev` は `./devinit.sh` を呼び出して tmux セッション（invest）を作成/再接続します。
-- devinit.sh は backend / frontend / copilot / logs / git のペイン構成で起動します。lazygit を使用します。
+## 2. backend API を起動
 
----
-
-## 2) バックエンド（API）
-推奨: リポジトリルートから実行して import パスが自然になるようにする。
-
-### 仮想環境をアクティブにしてからリポジトリルートに戻る
-```
-cd $HOME/code/Invest/Python
-source python/.venv/bin/activate
-cd $HOME/code/Invest/backend
-python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
-API: http://localhost:8000
-```
-
----
-
-## 3) フロントエンド（React）
-```
-cd $HOME/code/Invest/Python
-source python/.venv/bin/activate
-cd $HOME/code/Invest/frontend
-
-npm run dev -- --host 0.0.0.0 --port 3000 --strictPort
-
-アプリ: http://localhost:3000
-
-ビルド/テスト:
-npm run build
-npm run test -- --testNamePattern TopBottomPurchaseCharts
-```
-
----
-
-## 4) Python 実行コマンド（ローカル CLI）
-仮想環境を有効化して実行してください。
-
-### 仮想環境作成/セットアップ
-```
-# 初回のみ
-cd $HOME/code/Invest/Python
-python -m venv .venv
+```bash
+cd ~/code/Invest/python
 source .venv/bin/activate
-pip install -r requirements.txt
+cd ~/code/Invest
+python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 主なスクリプト
+疎通確認:
+
+```bash
+curl http://localhost:8000/health
 ```
-python main.py --mode backtest                    # デフォルトのバックテスト
+
+成果物ディレクトリを差し替える場合:
+
+```bash
+cd ~/code/Invest/python
+source .venv/bin/activate
+cd ~/code/Invest
+INVEST_OUTPUT_DIR=/absolute/path/to/backtest python -m uvicorn backend.app:app --host 0.0.0.0 --port 8000
+```
+
+## 3. frontend を起動
+
+```bash
+cd ~/code/Invest/frontend
+npm run dev -- --host 0.0.0.0 --port 3000 --strictPort
+```
+
+## 4. Python CLI を実行
+
+```bash
+cd ~/code/Invest/python
+source .venv/bin/activate
+python main.py --mode backtest
 python main.py --mode backtest --start 2023-01-01 --end 2023-12-31
-python main.py --mode backtest --no-charts       # チャート生成をスキップ
+python main.py --mode backtest --no-charts
 python main.py --mode chart --ticker AAPL --start 2023-01-01 --end 2023-12-31
 python scripts/update_tickers_extended.py --min-market-cap 5000000000
 ```
 
+## 5. OpenAPI 契約から frontend 型を再生成
+
+```bash
+cd ~/code/Invest/python
+source .venv/bin/activate
+cd ~/code/Invest
+python -m backend.scripts.export_frontend_contracts
+```
+
+## 6. Electron を使う
+
+```bash
+cd ~/code/Invest
+npm install
+npm run build
+npm run dev
+npm run start:prod
+```
+
+## 7. Docker Compose で起動
+
+```bash
+cd ~/code/Invest
+docker compose up --build
+```
+
+個別起動:
+
+```bash
+docker compose up backend frontend
+```
+
+## 8. テストと検証
+
+backend:
+
+```bash
+cd ~/code/Invest/python
+source .venv/bin/activate
+cd ~/code/Invest
+pytest backend/tests -q
+```
+
+frontend:
+
+```bash
+cd ~/code/Invest
+npm --prefix frontend run build
+npm --prefix frontend run test -- --run
+npm --prefix frontend run test:coverage
+```
+
+full stack / Electron:
+
+```bash
+cd ~/code/Invest
+npm run test:e2e
+npm run build
+```
+
+## 9. よく使う just コマンド
+
+```bash
+cd ~/code/Invest
+just dev
+just stop
+just logs
+just test
+just lint
+just fmt
+```

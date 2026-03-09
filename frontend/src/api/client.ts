@@ -4,65 +4,26 @@
  * Provides typed functions for all backend API endpoints.
  */
 
-const API_BASE = '/api'
+import { buildApiUrl } from './base'
+import type {
+  BacktestArtifactsResponse,
+  BacktestRequest,
+  BacktestResponse,
+  ChartData,
+  TopBottomTickers,
+  TradeMarkerPoint,
+  TradeMarkers,
+} from './generated/contracts'
 
-export interface BacktestRequest {
-  start_date: string
-  end_date: string
-}
-
-export interface BacktestResponse {
-  status: string
-  message: string
-}
-
-export interface TickerStat {
-  ticker: string
-  total_pnl: number
-  num_trades?: number
-  win_rate?: number
-}
-
-export interface TopBottomTickers {
-  top: TickerStat[]
-  bottom: TickerStat[]
-}
-
-export interface BacktestResults {
-  trade_log: Record<string, unknown>[]
-  ticker_stats: Record<string, unknown>[]
-  has_results: boolean
-}
-
-export interface ChartData {
-  ticker: string
-  dates: string[]
-  open: number[]
-  high: number[]
-  low: number[]
-  close: number[]
-  volume: number[]
-  sma20?: (number | null)[]
-  sma50?: (number | null)[]
-  sma200?: (number | null)[]
-}
-
-export interface TradeMarker {
-  date: string
-  price: number
-  pnl?: number
-}
-
-export interface TradeMarkers {
-  entries: TradeMarker[]
-  exits: TradeMarker[]
-}
+export type BacktestResults = BacktestArtifactsResponse
+export type { BacktestRequest, BacktestResponse, ChartData, TopBottomTickers, TradeMarkers }
+export type TradeMarker = TradeMarkerPoint
 
 /**
  * Run a backtest with the given date range.
  */
 export async function runBacktest(request: BacktestRequest): Promise<BacktestResponse> {
-  const response = await fetch(`${API_BASE}/backtest/run`, {
+  const response = await fetch(buildApiUrl('/backtest/run'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -77,7 +38,7 @@ export async function runBacktest(request: BacktestRequest): Promise<BacktestRes
  * Get backtest results (trade log and ticker stats).
  */
 export async function getBacktestResults(): Promise<BacktestResults> {
-  const response = await fetch(`${API_BASE}/backtest/results`)
+  const response = await fetch(buildApiUrl('/backtest/results'))
   if (!response.ok) {
     throw new Error(`Failed to fetch results: ${response.status}`)
   }
@@ -88,7 +49,7 @@ export async function getBacktestResults(): Promise<BacktestResults> {
  * Get top and bottom tickers by P&L.
  */
 export async function getTopBottomTickers(): Promise<TopBottomTickers> {
-  const response = await fetch(`${API_BASE}/backtest/tickers`)
+  const response = await fetch(buildApiUrl('/backtest/tickers'))
   if (!response.ok) {
     throw new Error(`Failed to fetch tickers: ${response.status}`)
   }
@@ -107,7 +68,7 @@ export async function getChartData(
   if (startDate) params.set('start_date', startDate)
   if (endDate) params.set('end_date', endDate)
 
-  const url = `${API_BASE}/charts/${ticker}${params.toString() ? '?' + params.toString() : ''}`
+  const url = buildApiUrl(`/charts/${ticker}${params.toString() ? '?' + params.toString() : ''}`)
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error(`Failed to fetch chart data: ${response.status}`)
@@ -119,7 +80,7 @@ export async function getChartData(
  * Get trade markers for a ticker.
  */
 export async function getTradeMarkers(ticker: string): Promise<TradeMarkers> {
-  const response = await fetch(`${API_BASE}/charts/${ticker}/trades`)
+  const response = await fetch(buildApiUrl(`/charts/${ticker}/trades`))
   if (!response.ok) {
     throw new Error(`Failed to fetch trade markers: ${response.status}`)
   }

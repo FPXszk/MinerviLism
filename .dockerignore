@@ -1,0 +1,14 @@
+node_modules
+frontend/node_modules
+frontend/dist
+renderer-dist
+dist
+release
+python/.venv
+python/__pycache__
+backend/__pycache__
+backend/.pytest_cache
+.git
+backend.log
+frontend.log
+capture_tmp

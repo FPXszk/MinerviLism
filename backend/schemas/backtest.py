@@ -1,0 +1,88 @@
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+
+class BacktestRequest(BaseModel):
+    start_date: str
+    end_date: str
+
+
+class BacktestResponse(BaseModel):
+    status: str
+    message: str
+    job_id: Optional[str] = None
+
+
+class BacktestSummary(BaseModel):
+    total_trades: int = 0
+    winning_trades: int = 0
+    losing_trades: int = 0
+    win_rate: float = 0
+    total_pnl: float = 0
+    avg_win: float = 0
+    avg_loss: float = 0
+
+
+class TradeRecord(BaseModel):
+    ticker: str
+    entry_date: Optional[str] = None
+    entry_price: Optional[float] = None
+    exit_date: Optional[str] = None
+    exit_price: Optional[float] = None
+    exit_reason: Optional[str] = None
+    shares: Optional[float] = None
+    pnl: Optional[float] = None
+    pnl_pct: Optional[float] = None
+    date: Optional[str] = None
+    action: Optional[str] = None
+    price: Optional[float] = None
+
+
+class TradeLogEvent(BaseModel):
+    date: Optional[str] = None
+    action: Optional[str] = None
+    ticker: str
+    price: Optional[float] = None
+    shares: Optional[float] = None
+    pnl: Optional[float] = None
+
+
+class TickerStats(BaseModel):
+    ticker: str
+    total_pnl: float
+    trade_count: Optional[int] = None
+    num_trades: Optional[int] = None
+    win_rate: Optional[float] = None
+
+
+class BacktestResults(BaseModel):
+    timestamp: str
+    summary: BacktestSummary
+    trades: list[TradeRecord]
+    ticker_stats: list[TickerStats]
+    charts: dict[str, Optional[str]]
+
+
+class BacktestArtifactsResponse(BaseModel):
+    trade_log: list[TradeLogEvent]
+    ticker_stats: list[TickerStats]
+    has_results: bool
+
+
+class BacktestMetadata(BaseModel):
+    timestamp: str
+    start_date: str
+    end_date: str
+    period: str
+    trade_count: int
+    dir_name: str
+
+
+class BacktestListResponse(BaseModel):
+    backtests: list[BacktestMetadata]
+
+
+class TopBottomTickers(BaseModel):
+    top: list[TickerStats] = Field(default_factory=list)
+    bottom: list[TickerStats] = Field(default_factory=list)

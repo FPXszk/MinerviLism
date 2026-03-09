@@ -17,13 +17,11 @@ from pathlib import Path
 FILE_PATH = Path(__file__).resolve()
 BACKEND_DIR = FILE_PATH.parent
 REPO_ROOT = FILE_PATH.parents[1]
-# Only adjust sys.path when module is executed as a script (not when imported as a package via -m).
-# When running as a package (e.g., `python -m uvicorn backend.app:app`), __package__ is set and
-# the import system will resolve package imports correctly.
-if not __package__:
-    for _p in (str(BACKEND_DIR), str(REPO_ROOT)):
-        if _p not in sys.path:
-            sys.path.insert(0, _p)
+# Ensure both repository root and backend directory are importable for direct pytest usage,
+# package execution (`python -m uvicorn backend.app:app`), and Docker-based launches.
+for _p in (str(BACKEND_DIR), str(REPO_ROOT)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

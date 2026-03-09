@@ -12,16 +12,13 @@ from fastapi import APIRouter, Query
 from loguru import logger
 
 from services.result_loader import load_trade_log
+from services.result_store import ResultStore, get_backtest_output_dir
+from schemas.charts import ChartData, TradeMarkers
 
 router = APIRouter(prefix="/api/charts", tags=["charts"])
 
 # Default paths
-DEFAULT_OUTPUT_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    "python",
-    "output",
-    "backtest",
-)
+DEFAULT_OUTPUT_DIR = str(get_backtest_output_dir())
 
 
 def get_chart_data(
@@ -74,19 +71,11 @@ def get_trade_markers(
     Returns:
         Dict with 'entries' and 'exits' lists
     """
-    if output_dir is None:
-        output_dir = DEFAULT_OUTPUT_DIR
-
-    trade_log_path = os.path.join(output_dir, "trade_log.csv")
-
-    # If trade_log not present at root, try latest backtest subdirectory
-    if not os.path.exists(trade_log_path):
-        try:
-            dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
-            if dirs:
-                trade_log_path = os.path.join(output_dir, dirs[0], "trade_log.csv")
-        except Exception:
-            pass
+    store = ResultStore(output_dir or DEFAULT_OUTPUT_DIR)
+    latest_run = store.get_latest_run()
+    trade_log_path = ""
+    if latest_run and latest_run.trade_log_path:
+        trade_log_path = str(latest_run.trade_log_path)
 
     all_trades = load_trade_log(trade_log_path)
 
@@ -112,7 +101,7 @@ def get_trade_markers(
     return {"entries": entries, "exits": exits}
 
 
-@router.get("/{ticker}")
+@router.get("/{ticker}", response_model=ChartData)
 def get_ticker_chart(
     ticker: str,
     start_date: Optional[str] = Query(None),
@@ -122,7 +111,7 @@ def get_ticker_chart(
     return get_chart_data(ticker, start_date=start_date, end_date=end_date)
 
 
-@router.get("/{ticker}/trades")
+@router.get("/{ticker}/trades", response_model=TradeMarkers)
 def get_ticker_trades(ticker: str):
     """Get trade entry/exit markers for a specific ticker."""
     return get_trade_markers(ticker)

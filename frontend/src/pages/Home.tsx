@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { BacktestForm } from '../components/BacktestForm'
 import { TickerList, TickerItem } from '../components/TickerList'
 import { runBacktest, getTopBottomTickers } from '../api/client'
+import type { TopBottomTickers } from '../api/client'
 
 interface HomeProps {
   onNavigateToChart?: (ticker: string) => void
@@ -25,11 +26,18 @@ export function Home({ onNavigateToChart }: HomeProps) {
     loadTickers()
   }, [])
 
+  const toTickerItems = (items: TopBottomTickers['top'] = []): TickerItem[] =>
+    items.map((item) => ({
+      ...item,
+      num_trades: item.num_trades ?? undefined,
+      win_rate: item.win_rate ?? undefined,
+    }))
+
   const loadTickers = async () => {
     try {
       const data = await getTopBottomTickers()
-      setTopTickers(data.top)
-      setBottomTickers(data.bottom)
+      setTopTickers(toTickerItems(data.top ?? []))
+      setBottomTickers(toTickerItems(data.bottom ?? []))
     } catch {
       // Silently handle - tickers will show empty state
     }

@@ -7,11 +7,10 @@ Provides REST API for:
 - Getting top/bottom tickers
 """
 import os
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from loguru import logger
 import pandas as pd
 
@@ -25,41 +24,26 @@ from services.result_loader import (
     generate_placeholder_charts,
 )
 from services.job_runner import job_runner
+from services.result_store import ResultStore, get_backtest_output_dir
+from schemas.backtest import (
+    BacktestArtifactsResponse,
+    BacktestListResponse,
+    BacktestMetadata,
+    BacktestRequest,
+    BacktestResponse,
+    BacktestResults,
+    BacktestSummary,
+    TickerStats,
+    TopBottomTickers,
+    TradeLogEvent,
+    TradeRecord,
+)
+from schemas.charts import OhlcPoint, OhlcResponse
 
 router = APIRouter(prefix="/api/backtest", tags=["backtest"])
 
 # Default paths for result files
-DEFAULT_OUTPUT_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-    "python",
-    "output",
-    "backtest",
-)
-
-
-class BacktestRequest(BaseModel):
-    """Request model for backtest execution."""
-
-    start_date: str
-    end_date: str
-
-
-class BacktestResponse(BaseModel):
-    """Response model for backtest execution."""
-
-    status: str
-    message: str
-    job_id: Optional[str] = None
-
-
-class BacktestResultsResponse(BaseModel):
-    """Response model for backtest results."""
-
-    timestamp: str
-    summary: Dict
-    trades: List[Dict]
-    ticker_stats: List[Dict]
-    charts: Dict[str, Optional[str]]  # chart_name -> base64_image
+DEFAULT_OUTPUT_DIR = str(get_backtest_output_dir())
 
 
 def run_backtest_task(start_date: str, end_date: str) -> Dict:
@@ -90,7 +74,19 @@ def run_backtest_task(start_date: str, end_date: str) -> Dict:
     }
 
 
-def load_results(output_dir: Optional[str] = None) -> Dict:
+def _normalize_trade_log_records(records: list[dict]) -> list[TradeLogEvent]:
+    return [TradeLogEvent(**record) for record in records]
+
+
+def _normalize_ticker_stats(records: list[dict]) -> list[TickerStats]:
+    return [TickerStats(**record) for record in records]
+
+
+def _normalize_trade_records(records: list[dict]) -> list[TradeRecord]:
+    return [TradeRecord(**record) for record in records]
+
+
+def load_results(output_dir: Optional[str] = None) -> BacktestArtifactsResponse:
     """
     Load backtest results from output directory.
 
@@ -100,42 +96,31 @@ def load_results(output_dir: Optional[str] = None) -> Dict:
     Returns:
         Dict with trade_log, ticker_stats, and has_results flag
     """
-    if output_dir is None:
-        output_dir = DEFAULT_OUTPUT_DIR
+    store = ResultStore(output_dir or DEFAULT_OUTPUT_DIR)
+    latest_run = store.get_latest_run()
+    if latest_run is None:
+        return BacktestArtifactsResponse(trade_log=[], ticker_stats=[], has_results=False)
 
-    trade_log_path = os.path.join(output_dir, "trade_log.csv")
-    ticker_stats_path = os.path.join(output_dir, "ticker_stats.csv")
+    trade_log_path = str(latest_run.trade_log_path or latest_run.trades_path or "")
+    ticker_stats_path = str(latest_run.ticker_stats_path or "")
 
-    # If files are not present directly under output_dir, try the latest
-    # backtest_* subdirectory (this matches how backtests are saved).
-    if not (os.path.exists(trade_log_path) or os.path.exists(ticker_stats_path)):
-        try:
-            dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
-            if dirs:
-                latest = dirs[0]
-                trade_log_path = os.path.join(output_dir, latest, "trade_log.csv")
-                ticker_stats_path = os.path.join(output_dir, latest, "ticker_stats.csv")
-        except Exception:
-            # Fall back to original paths if anything goes wrong
-            pass
-
-    trade_log = load_trade_log(trade_log_path)
-    ticker_stats = load_ticker_stats(ticker_stats_path)
+    trade_log = _normalize_trade_log_records(load_trade_log(trade_log_path))
+    ticker_stats = _normalize_ticker_stats(load_ticker_stats(ticker_stats_path))
 
     has_results = len(trade_log) > 0 or len(ticker_stats) > 0
 
-    return {
-        "trade_log": trade_log,
-        "ticker_stats": ticker_stats,
-        "has_results": has_results,
-    }
+    return BacktestArtifactsResponse(
+        trade_log=trade_log,
+        ticker_stats=ticker_stats,
+        has_results=has_results,
+    )
 
 
 def load_top_bottom_tickers(
     output_dir: Optional[str] = None,
     top_n: int = 5,
     bottom_n: int = 5,
-) -> Dict:
+) -> TopBottomTickers:
     """
     Load top/bottom tickers from output directory.
 
@@ -147,22 +132,14 @@ def load_top_bottom_tickers(
     Returns:
         Dict with 'top' and 'bottom' ticker lists
     """
-    if output_dir is None:
-        output_dir = DEFAULT_OUTPUT_DIR
-
-    ticker_stats_path = os.path.join(output_dir, "ticker_stats.csv")
-
-    # If no root ticker_stats, fall back to latest backtest directory
-    if not os.path.exists(ticker_stats_path):
-        try:
-            dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
-            if dirs:
-                latest = dirs[0]
-                ticker_stats_path = os.path.join(output_dir, latest, "ticker_stats.csv")
-        except Exception:
-            pass
-
-    return get_top_bottom_tickers(ticker_stats_path, top_n=top_n, bottom_n=bottom_n)
+    store = ResultStore(output_dir or DEFAULT_OUTPUT_DIR)
+    latest_run = store.get_latest_run()
+    ticker_stats_path = str(latest_run.ticker_stats_path) if latest_run and latest_run.ticker_stats_path else ""
+    raw = get_top_bottom_tickers(ticker_stats_path, top_n=top_n, bottom_n=bottom_n)
+    return TopBottomTickers(
+        top=_normalize_ticker_stats(raw.get("top", [])),
+        bottom=_normalize_ticker_stats(raw.get("bottom", [])),
+    )
 
 
 @router.post("/run", response_model=BacktestResponse)
@@ -172,28 +149,27 @@ def run_backtest(request: BacktestRequest):
     return BacktestResponse(**result)
 
 
-@router.get("/results")
+@router.get("/results", response_model=BacktestArtifactsResponse)
 def get_results():
     """Get backtest results (trade log and ticker stats)."""
     return load_results()
 
 
-@router.get("/tickers")
+@router.get("/tickers", response_model=TopBottomTickers)
 def get_tickers():
     """Get top 5 and bottom 5 tickers by P&L."""
     return load_top_bottom_tickers()
 
 
-@router.get("/list")
+@router.get("/list", response_model=BacktestListResponse)
 def list_backtests():
     """List all available backtest results."""
-    output_dir = DEFAULT_OUTPUT_DIR
-    backtests = list_available_backtests(output_dir)
-    return {"backtests": backtests}
+    backtests = list_available_backtests(DEFAULT_OUTPUT_DIR)
+    return BacktestListResponse(backtests=[BacktestMetadata(**backtest) for backtest in backtests])
 
 
-@router.get("/latest")
-def get_latest_results(range: Optional[str] = None) -> BacktestResultsResponse:
+@router.get("/latest", response_model=BacktestResults)
+def get_latest_results(range: Optional[str] = None) -> BacktestResults:
     """Get the latest backtest results or a range-specific backtest.
 
     Query parameters:
@@ -201,42 +177,14 @@ def get_latest_results(range: Optional[str] = None) -> BacktestResultsResponse:
       is found as a substring in an existing backtest directory name, that
       directory will be returned. Special value 'ALL' returns the latest.
     """
-    output_dir = DEFAULT_OUTPUT_DIR
-    
-    # Ensure output directory exists
-    if not os.path.exists(output_dir):
+    store = ResultStore(DEFAULT_OUTPUT_DIR)
+    if not store.list_runs():
         raise HTTPException(status_code=404, detail="No backtest results found")
-    
     try:
-        dirs = sorted([d for d in os.listdir(output_dir) if d.startswith("backtest_")], reverse=True)
-        if not dirs:
+        chosen = store.get_run_by_range(range)
+        if chosen is None:
             raise HTTPException(status_code=404, detail="No backtest results found")
-
-        # If a range parameter was provided, attempt to find a matching directory
-        if range:
-            # Normalize
-            r = range.strip()
-            # If user asked for ALL, return latest
-            if r.upper() == "ALL":
-                chosen = dirs[0]
-                return _get_backtest_results_by_dir(os.path.join(output_dir, chosen), chosen)
-
-            # Try to match directories that contain the range string
-            candidates = [d for d in dirs if r in d]
-            if candidates:
-                chosen = candidates[0]
-                return _get_backtest_results_by_dir(os.path.join(output_dir, chosen), chosen)
-
-            # If range looks like a 4-digit year, try match backtest_YYYY
-            if len(r) == 4 and r.isdigit():
-                year_candidates = [d for d in dirs if f"backtest_{r}-" in d]
-                if year_candidates:
-                    chosen = year_candidates[0]
-                    return _get_backtest_results_by_dir(os.path.join(output_dir, chosen), chosen)
-
-            # No match found; fall back to latest
-        latest_dir = dirs[0]
-        return _get_backtest_results_by_dir(os.path.join(output_dir, latest_dir), latest_dir)
+        return _get_backtest_results_by_dir(str(chosen.result_dir), chosen.dir_name)
     except HTTPException:
         raise
     except Exception as e:
@@ -244,19 +192,15 @@ def get_latest_results(range: Optional[str] = None) -> BacktestResultsResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/results/{timestamp}")
-def get_results_by_timestamp(timestamp: str) -> BacktestResultsResponse:
+@router.get("/results/{timestamp}", response_model=BacktestResults)
+def get_results_by_timestamp(timestamp: str) -> BacktestResults:
     """Get backtest results for a specific timestamp."""
-    output_dir = DEFAULT_OUTPUT_DIR
-    
-    # Find directory matching timestamp pattern
+    store = ResultStore(DEFAULT_OUTPUT_DIR)
     try:
-        matching_dirs = [d for d in os.listdir(output_dir) if timestamp in d]
-        if not matching_dirs:
+        matched = store.get_run_by_timestamp(timestamp)
+        if matched is None:
             raise HTTPException(status_code=404, detail=f"No backtest results found for timestamp: {timestamp}")
-        
-        dir_name = matching_dirs[0]
-        return _get_backtest_results_by_dir(os.path.join(output_dir, dir_name), dir_name)
+        return _get_backtest_results_by_dir(str(matched.result_dir), matched.dir_name)
     except HTTPException:
         raise
     except Exception as e:
@@ -264,13 +208,13 @@ def get_results_by_timestamp(timestamp: str) -> BacktestResultsResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResultsResponse:
+def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResults:
     """Helper function to load backtest results from a directory."""
     if not os.path.exists(result_dir):
         raise HTTPException(status_code=404, detail=f"Backtest directory not found: {dir_name}")
     
     # Load summary metrics
-    summary = load_backtest_summary(result_dir)
+    summary = BacktestSummary(**load_backtest_summary(result_dir))
     
     # Load trade data
     # Some backtests generate 'trades.csv' while others use 'trade_log.csv'. Try both.
@@ -279,17 +223,16 @@ def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResu
     trades_candidates = [
         os.path.join(result_dir, "trades.csv"),
         os.path.join(result_dir, "trade_log.csv"),
-        os.path.join(result_dir, "trade_log.csv"),
     ]
     for p in trades_candidates:
         if os.path.exists(p):
-            trades = load_trade_log(p)
+            trades = _normalize_trade_records(load_trade_log(p))
             trade_log_path = p
             break
 
     # Load ticker statistics
     ticker_stats_path = os.path.join(result_dir, "ticker_stats.csv")
-    ticker_stats = load_ticker_stats(ticker_stats_path)
+    ticker_stats = _normalize_ticker_stats(load_ticker_stats(ticker_stats_path))
 
     # Load charts as base64
     charts = {}
@@ -397,7 +340,7 @@ def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResu
     except Exception:
         pass
 
-    return BacktestResultsResponse(
+    return BacktestResults(
         timestamp=dir_name,
         summary=summary,
         trades=trades,
@@ -406,7 +349,7 @@ def _get_backtest_results_by_dir(result_dir: str, dir_name: str) -> BacktestResu
     )
 
 
-@router.get('/ohlc')
+@router.get('/ohlc', response_model=OhlcResponse)
 def get_ohlc(ticker: str, range: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None):
     """Return OHLCV data for a given ticker and date range.
 
@@ -459,7 +402,7 @@ def get_ohlc(ticker: str, range: Optional[str] = None, start_date: Optional[str]
         stock = tc.yf.Ticker(ticker)
         df = stock.history(start=start_date, end=end_date)
         if df is None or df.empty:
-            return {'data': []}
+            return OhlcResponse()
 
         # normalize index and columns
         df.reset_index(inplace=True)
@@ -477,7 +420,7 @@ def get_ohlc(ticker: str, range: Optional[str] = None, start_date: Optional[str]
                 'close': None if pd.isna(row.get('Close')) else float(row.get('Close')),
                 'volume': None if pd.isna(row.get('Volume')) else int(row.get('Volume')),
             })
-        return {'data': data}
+        return OhlcResponse(data=[OhlcPoint(**item) for item in data])
     except Exception as e:
         logger.error(f'Failed to fetch OHLC for {ticker}: {e}')
         raise HTTPException(status_code=503, detail=str(e))

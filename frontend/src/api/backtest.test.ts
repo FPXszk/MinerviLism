@@ -13,7 +13,7 @@ describe('listAllBacktests', () => {
     fetchMock.mockReset();
   });
 
-  it('uses relative /api base URL by default', async () => {
+  it('uses browser-origin API URL by default', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ backtests: [] }),
@@ -21,6 +21,6 @@ describe('listAllBacktests', () => {
 
     await listAllBacktests();
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/backtest/list');
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3000/api/backtest/list');
   });
 });

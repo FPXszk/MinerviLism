@@ -1,0 +1,4 @@
+ticker,total_pnl,trade_count,num_trades,win_rate
+AAA,20,1,1,1
+BBB,5,1,1,1
+CCC,-20,1,1,0
