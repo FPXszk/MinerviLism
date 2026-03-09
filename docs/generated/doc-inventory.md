@@ -22,6 +22,7 @@
     - [index.md](../exec-plans/active/index.md) — exec-plans/active — ここには現在進行中の実行計画を置きます。
   - `docs/exec-plans/completed/`
     - [index.md](../exec-plans/completed/index.md) — exec-plans/completed — 完了した実行計画の記録を置きます。
+    - [backtest-dashboard-renewal.md](../exec-plans/completed/backtest-dashboard-renewal.md) — 実装計画: バックテスト・ダッシュボード改善 — - タイトル: バックテスト・ダッシュボード改善
     - [backtest-retention.md](../exec-plans/completed/backtest-retention.md) — 変更・削除・作成するファイル — - backend/services/result_store.py
     - [ci-automation.md](../exec-plans/completed/ci-automation.md) — ci-automation — - タイトル: Docker / 契約生成の CI 自動検証
     - [create-root-readme.md](../exec-plans/completed/create-root-readme.md) — create-root-readme — - タイトル: ルート README.md の新規作成と改善提案整理

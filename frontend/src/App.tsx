@@ -10,6 +10,8 @@ import { Home } from './pages/Home'
 import { HomeLanding } from './pages/HomeLanding'
 import { Chart } from './pages/Chart'
 import { BacktestDashboard } from './pages/BacktestDashboard'
+import { BacktestRunPage } from './pages/BacktestRunPage'
+import { BacktestAnalysisPage } from './pages/BacktestAnalysisPage'
 import { AppLanguage, setAppLanguage } from './i18n'
 import './App.css'
 
@@ -99,7 +101,11 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<HomeLanding />} />
           <Route path="/chart/:ticker" element={<Chart />} />
-          <Route path="/dashboard" element={<BacktestDashboard />} />
+          <Route path="/dashboard" element={<BacktestDashboard />}>
+            <Route index element={<Navigate to="run" replace />} />
+            <Route path="run" element={<BacktestRunPage />} />
+            <Route path="analysis" element={<BacktestAnalysisPage />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

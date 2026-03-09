@@ -5,6 +5,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 const rootDir = path.resolve(__dirname, '../../..')
 const fixtureOutputDir = path.join(rootDir, 'tests', 'fixtures', 'backtest_sample')
@@ -102,21 +103,31 @@ describe('BacktestDashboard E2E', () => {
     async () => {
       vi.resetModules()
       const { BacktestDashboard } = await import('./BacktestDashboard')
-      const user = userEvent.setup()
+      const { BacktestRunPage } = await import('./BacktestRunPage')
+      const { BacktestAnalysisPage } = await import('./BacktestAnalysisPage')
 
-      render(<BacktestDashboard />)
+      render(
+        <MemoryRouter initialEntries={['/dashboard/analysis']}>
+          <Routes>
+            <Route path="/dashboard" element={<BacktestDashboard />}>
+              <Route index element={<Navigate to="run" replace />} />
+              <Route path="run" element={<BacktestRunPage />} />
+              <Route path="analysis" element={<BacktestAnalysisPage />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>,
+      )
 
       expect(await screen.findByRole('heading', { name: 'Backtest Dashboard' })).toBeInTheDocument()
-      expect(await screen.findByText('2026-01-01 to 2026-01-31')).toBeInTheDocument()
+      expect(await screen.findByText('Analysis & Results')).toBeInTheDocument()
       expect(await screen.findByText('backtest_2026-01-01_to_2026-01-31')).toBeInTheDocument()
 
       await act(async () => {
-        await user.click(screen.getByRole('button', { name: 'Trades' }))
         await flushAsyncUpdates()
       })
 
-      expect(await screen.findByText('AAA')).toBeInTheDocument()
-      expect(await screen.findByText('CCC')).toBeInTheDocument()
+      expect((await screen.findAllByText('AAA')).length).toBeGreaterThan(0)
+      expect((await screen.findAllByText('CCC')).length).toBeGreaterThan(0)
     },
     60000,
   )

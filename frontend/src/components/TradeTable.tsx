@@ -2,77 +2,103 @@
  * Trade Table Component
  * Displays detailed trade records with sorting and pagination
  */
-import React, { useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { TradeRecord } from '../api/backtest';
+import React, { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { TradeRecord } from '../api/backtest'
 
 interface TradeTableProps {
-  trades: TradeRecord[];
-  loading?: boolean;
+  trades: TradeRecord[]
+  loading?: boolean
 }
 
-type SortField = keyof TradeRecord;
-type SortDirection = 'asc' | 'desc';
+type SortField = keyof TradeRecord
+type SortDirection = 'asc' | 'desc'
+
+const EXIT_REASON_KEYS: Record<string, string> = {
+  target: 'takeProfit',
+  take_profit: 'takeProfit',
+  target_reached: 'takeProfit',
+  stop: 'stopLoss',
+  stop_loss: 'stopLoss',
+  timeout: 'timeout',
+  end_of_backtest: 'backtestEnd',
+  rule: 'ruleExit',
+  ma50_break: 'ma50Break',
+}
+
+function humanizeExitReason(reason: string) {
+  return reason
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (value) => value.toUpperCase())
+}
 
 export const TradeTable: React.FC<TradeTableProps> = ({ trades, loading = false }) => {
-  const { t } = useTranslation();
-  const [page, setPage] = useState(0);
-  const [sortField, setSortField] = useState<SortField>('exit_date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const { t } = useTranslation()
+  const [page, setPage] = useState(0)
+  const [sortField, setSortField] = useState<SortField>('exit_date')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
-  const itemsPerPage = 20;
+  const itemsPerPage = 20
 
   const sortedTrades = useMemo(() => {
-    const sorted = [...trades];
+    const sorted = [...trades]
     sorted.sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
+      const aVal = a[sortField]
+      const bVal = b[sortField]
 
       if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal
       }
 
-      // String comparison
-      const aStr = String(aVal).toLowerCase();
-      const bStr = String(bVal).toLowerCase();
+      const aStr = String(aVal).toLowerCase()
+      const bStr = String(bVal).toLowerCase()
       return sortDirection === 'asc'
         ? aStr.localeCompare(bStr)
-        : bStr.localeCompare(aStr);
-    });
-    return sorted;
-  }, [trades, sortField, sortDirection]);
+        : bStr.localeCompare(aStr)
+    })
+    return sorted
+  }, [trades, sortField, sortDirection])
 
   const paginatedTrades = useMemo(() => {
-    const start = page * itemsPerPage;
-    return sortedTrades.slice(start, start + itemsPerPage);
-  }, [sortedTrades, page]);
+    const start = page * itemsPerPage
+    return sortedTrades.slice(start, start + itemsPerPage)
+  }, [sortedTrades, page])
 
-  const totalPages = Math.ceil(sortedTrades.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedTrades.length / itemsPerPage)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortField(field);
-      setSortDirection('desc');
+      setSortField(field)
+      setSortDirection('desc')
     }
-    setPage(0);
-  };
+    setPage(0)
+  }
 
   const formatCurrency = (value: number | null | undefined) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-    }).format(value ?? 0);
-  };
+    }).format(value ?? 0)
+  }
+
+  const formatExitReason = (reason: string | null | undefined) => {
+    if (!reason) return '-'
+    const normalized = reason.toLowerCase()
+    const mappedKey = EXIT_REASON_KEYS[normalized] ?? normalized
+    return t(`tradeTable.exitReasons.${mappedKey}`, {
+      defaultValue: humanizeExitReason(normalized),
+    })
+  }
 
   if (loading) {
-    return <div className="trade-table loading">{t('tradeTable.loadingTrades')}</div>;
+    return <div className="trade-table loading">{t('tradeTable.loadingTrades')}</div>
   }
 
   if (trades.length === 0) {
-    return <div className="trade-table empty">{t('tradeTable.noTrades')}</div>;
+    return <div className="trade-table empty">{t('tradeTable.noTrades')}</div>
   }
 
   const SortableHeader = ({ field, label }: { field: SortField; label: string }) => (
@@ -82,7 +108,7 @@ export const TradeTable: React.FC<TradeTableProps> = ({ trades, loading = false 
         <span style={{ marginLeft: '5px' }}>{sortDirection === 'asc' ? '↑' : '↓'}</span>
       )}
     </th>
-  );
+  )
 
   return (
     <div className="trade-table">
@@ -126,11 +152,51 @@ export const TradeTable: React.FC<TradeTableProps> = ({ trades, loading = false 
                 <td className={`number ${(trade.pnl_pct ?? 0) >= 0 ? 'positive' : 'negative'}`}>
                   {((trade.pnl_pct ?? 0) * 100).toFixed(2)}%
                 </td>
-                <td className="reason">{trade.exit_reason ?? '-'}</td>
+                <td className="reason">{formatExitReason(trade.exit_reason)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="trade-cards" data-testid="trade-cards">
+        {paginatedTrades.map((trade, idx) => {
+          const pnlValue = trade.pnl ?? 0
+          const pnlPctValue = trade.pnl_pct ?? 0
+          return (
+            <article key={`${trade.ticker}-${trade.exit_date ?? idx}`} className="trade-card">
+              <div className="trade-card-header">
+                <div>
+                  <div className="trade-card-ticker">{trade.ticker}</div>
+                  <div className="trade-card-reason">{formatExitReason(trade.exit_reason)}</div>
+                </div>
+                <div className={`trade-card-pnl ${pnlValue >= 0 ? 'positive' : 'negative'}`}>
+                  <span>{formatCurrency(trade.pnl)}</span>
+                  <span>{(pnlPctValue * 100).toFixed(2)}%</span>
+                </div>
+              </div>
+
+              <div className="trade-card-grid">
+                <div className="trade-card-item">
+                  <span className="trade-card-label" role="img" aria-label={t('tradeTable.entryDate')}>📅</span>
+                  <span>{trade.entry_date ?? '-'}</span>
+                </div>
+                <div className="trade-card-item">
+                  <span className="trade-card-label" role="img" aria-label={t('tradeTable.exitDate')}>🏁</span>
+                  <span>{trade.exit_date ?? '-'}</span>
+                </div>
+                <div className="trade-card-item">
+                  <span className="trade-card-label" role="img" aria-label={t('tradeTable.entryPrice')}>💰</span>
+                  <span>{formatCurrency(trade.entry_price)}</span>
+                </div>
+                <div className="trade-card-item">
+                  <span className="trade-card-label" role="img" aria-label={t('tradeTable.exitPrice')}>💵</span>
+                  <span>{formatCurrency(trade.exit_price)}</span>
+                </div>
+              </div>
+            </article>
+          )
+        })}
       </div>
 
       <div className="pagination">
@@ -234,46 +300,125 @@ export const TradeTable: React.FC<TradeTableProps> = ({ trades, loading = false 
 
         .reason {
           font-size: 12px;
-          color: #999;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .trade-cards {
+          display: none;
+          gap: 12px;
+          margin-top: 12px;
+        }
+
+        .trade-card {
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 14px;
+          background: #ffffff;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+        }
+
+        .trade-card-header {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: flex-start;
+          margin-bottom: 12px;
+        }
+
+        .trade-card-ticker {
+          font-weight: 700;
+          font-size: 14px;
+          color: #0f172a;
+        }
+
+        .trade-card-reason {
+          margin-top: 4px;
+          font-size: 12px;
+          color: #475569;
+        }
+
+        .trade-card-pnl {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          font-family: 'Monaco', 'Courier New', monospace;
+          font-size: 12px;
+        }
+
+        .trade-card-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px 12px;
+        }
+
+        .trade-card-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+          color: #475569;
+          min-width: 0;
+        }
+
+        .trade-card-item span:last-child {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .trade-card-label {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 20px;
+          font-size: 14px;
         }
 
         .pagination {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          justify-content: center;
-          gap: 15px;
-          margin-top: 15px;
-          padding-top: 15px;
-          border-top: 1px solid #ddd;
+          margin-top: 16px;
+          gap: 8px;
         }
 
         .pagination-button {
           padding: 8px 12px;
-          border: 1px solid #ddd;
-          background: white;
-          border-radius: 4px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background: #ffffff;
           cursor: pointer;
-          font-size: 12px;
-          transition: all 0.2s;
-        }
-
-        .pagination-button:hover:not(:disabled) {
-          background: #f5f5f5;
-          border-color: #999;
         }
 
         .pagination-button:disabled {
-          color: #ccc;
+          opacity: 0.5;
           cursor: not-allowed;
         }
 
         .page-info {
-          font-size: 13px;
+          font-size: 12px;
           color: #666;
-          min-width: 100px;
-          text-align: center;
+        }
+
+        @media (max-width: 768px) {
+          .trade-table {
+            padding: 12px;
+          }
+
+          .table-wrapper {
+            display: none;
+          }
+
+          .trade-cards {
+            display: grid;
+          }
+
+          .pagination {
+            flex-wrap: wrap;
+          }
         }
       `}</style>
     </div>
-  );
-};
+  )
+}

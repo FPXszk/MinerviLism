@@ -58,6 +58,13 @@ describe('CandlestickChart Component', () => {
     render(<CandlestickChart ticker="AAPL" data={mockData} />)
     expect(screen.getByTestId('chart-rendered').dataset.ticker).toBe('AAPL')
   })
+
+  it('keeps charts in standard view without modal actions', () => {
+    render(<CandlestickChart ticker="AAPL" data={mockData} />)
+    expect(screen.getByTestId('chart-rendered')).not.toHaveAttribute('role', 'button')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /open interactive chart|詳細を開く/i })).not.toBeInTheDocument()
+  })
 })
 
 describe('buildCandlestickTraces', () => {

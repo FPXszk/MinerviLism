@@ -57,6 +57,12 @@
     "availableRuns": "{{count}} runs",
     "availableRunsHint": "Multiple runs exist for this period. The newest run is shown by default.",
     "tradesCount": "{{count}} trades",
+    "runRoute": "Run & Manage",
+    "analysisRoute": "Analysis & Results",
+    "routeNavigation": "Backtest sections",
+    "runRouteHint": "Manage command execution, pinned annual results, and live logs from one screen.",
+    "chartsRouteHint": "Review the standard-size chart gallery for top and bottom performers.",
+    "tradesRouteHint": "Review trade outcomes with compact mobile cards and translated exit reasons.",
     "summaryTab": "Summary",
     "chartsTab": "Charts",
     "tradesTab": "Trades",
@@ -125,7 +131,15 @@
     "exitReason": "Exit Reason",
     "previous": "← Previous",
     "next": "Next →",
-    "pageOf": "Page {{page}} of {{total}}"
+    "pageOf": "Page {{page}} of {{total}}",
+    "exitReasons": {
+      "takeProfit": "Take Profit",
+      "stopLoss": "Stop Loss",
+      "timeout": "Timeout",
+      "backtestEnd": "Backtest End",
+      "ruleExit": "Rule Exit",
+      "ma50Break": "MA50 Break"
+    }
   },
   "chartGallery": {
     "loadingCharts": "Loading charts...",

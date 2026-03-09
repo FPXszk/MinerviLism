@@ -57,6 +57,12 @@
     "availableRuns": "{{count}}件のrun",
     "availableRunsHint": "この期間には複数の run があり、既定では最新 run を表示しています。",
     "tradesCount": "{{count}} 件のトレード",
+    "runRoute": "実行・管理",
+    "analysisRoute": "解析・結果",
+    "routeNavigation": "バックテスト画面切り替え",
+    "runRouteHint": "コマンド実行、固定した年次結果、実行ログを 1 画面で管理します。",
+    "chartsRouteHint": "上位・下位銘柄の標準サイズチャートを確認します。",
+    "tradesRouteHint": "終了理由を日本語化し、モバイル向けカード表示でも確認できます。",
     "summaryTab": "サマリー",
     "chartsTab": "チャート",
     "tradesTab": "トレード",
@@ -125,7 +131,15 @@
     "exitReason": "終了理由",
     "previous": "← 前へ",
     "next": "次へ →",
-    "pageOf": "{{page}} / {{total}} ページ"
+    "pageOf": "{{page}} / {{total}} ページ",
+    "exitReasons": {
+      "takeProfit": "利確",
+      "stopLoss": "損切り",
+      "timeout": "時間切れ",
+      "backtestEnd": "バックテスト終了",
+      "ruleExit": "ルール終了",
+      "ma50Break": "MA50割れ"
+    }
   },
   "chartGallery": {
     "loadingCharts": "チャートを読み込み中...",

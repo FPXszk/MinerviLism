@@ -1,7 +1,10 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { BacktestDashboard } from './BacktestDashboard'
+import { BacktestAnalysisPage } from './BacktestAnalysisPage'
+import { BacktestRunPage } from './BacktestRunPage'
 
 const {
   listAllBacktestsMock,
@@ -179,6 +182,26 @@ async function clickAndFlush(user: ReturnType<typeof userEvent.setup>, target: E
   })
 }
 
+function LocationDisplay() {
+  const location = useLocation()
+  return <div data-testid="location-display">{location.pathname}</div>
+}
+
+function renderDashboard(initialEntry = '/dashboard') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <LocationDisplay />
+      <Routes>
+        <Route path="/dashboard" element={<BacktestDashboard />}>
+          <Route index element={<Navigate to="run" replace />} />
+          <Route path="run" element={<BacktestRunPage />} />
+          <Route path="analysis" element={<BacktestAnalysisPage />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
 describe('BacktestDashboard', () => {
   beforeEach(() => {
     vi.useRealTimers()
@@ -221,26 +244,27 @@ describe('BacktestDashboard', () => {
     vi.useRealTimers()
   })
 
-  it('loads available backtests and renders the summary tab by default', async () => {
-    render(<BacktestDashboard />)
+  it('redirects /dashboard to the run route and renders execution content', async () => {
+    renderDashboard()
 
     expect(await screen.findByRole('heading', { name: 'Backtest Dashboard' })).toBeInTheDocument()
+    expect(screen.getByTestId('location-display')).toHaveTextContent('/dashboard/run')
     expect(await screen.findByText('2025-01-01 to 2025-12-31')).toBeInTheDocument()
     expect(screen.getByText('Pinned')).toBeInTheDocument()
     expect(screen.getByText('Pinned annual results stay visible by default.')).toBeInTheDocument()
     expect(screen.getByText('3 runs')).toBeInTheDocument()
-    expect(await screen.findByTestId('summary-view')).toHaveTextContent('2')
+    expect(await screen.findByTestId('run-panel')).toBeInTheDocument()
     expect(screen.getByTestId('backtest-status')).toHaveTextContent('idle:0')
   })
 
   it('loads the latest results, runs commands, and cancels commands', async () => {
     const user = userEvent.setup()
 
-    render(<BacktestDashboard />)
+    renderDashboard('/dashboard/run')
 
-    expect(await screen.findByTestId('summary-view')).toHaveTextContent('2')
+    expect(await screen.findByTestId('run-panel')).toBeInTheDocument()
 
-    await clickAndFlush(user, screen.getByRole('button', { name: 'Load Latest' }))
+    await clickAndFlush(user, await screen.findByRole('button', { name: /Load Latest|Loading\.\.\./ }))
     await waitFor(() => expect(fetchLatestBacktestMock).toHaveBeenCalledTimes(1))
 
     await clickAndFlush(user, screen.getAllByRole('button', { name: 'Run job' })[0])
@@ -257,9 +281,9 @@ describe('BacktestDashboard', () => {
   })
 
   it('polls job status and refreshes latest results when a running job succeeds', async () => {
-    render(<BacktestDashboard />)
+    renderDashboard('/dashboard/run')
 
-    expect(await screen.findByTestId('summary-view')).toHaveTextContent('2')
+    expect(await screen.findByTestId('run-panel')).toBeInTheDocument()
 
     vi.useFakeTimers()
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTimeAsync })
@@ -275,30 +299,20 @@ describe('BacktestDashboard', () => {
     expect(fetchLatestBacktestMock).toHaveBeenCalledTimes(1)
   }, 10000)
 
-  it('renders run, charts, and trades tabs on mobile', async () => {
-    const user = userEvent.setup()
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      writable: true,
-      value: 640,
-    })
+  it('renders analysis route with summary, charts, and trades together', async () => {
+    renderDashboard('/dashboard/analysis')
 
-    render(<BacktestDashboard />)
-
-    expect(await screen.findAllByTestId('run-panel')).toHaveLength(1)
-
-    await clickAndFlush(user, screen.getByRole('button', { name: 'Charts' }))
+    expect(await screen.findByTestId('summary-view')).toHaveTextContent('2')
     expect(await screen.findByTestId('charts-view')).toHaveTextContent('charts:2')
-
-    await clickAndFlush(user, screen.getByRole('button', { name: 'Trades' }))
     expect(await screen.findByTestId('trades-view')).toHaveTextContent('2')
+    expect(screen.queryByTestId('run-panel')).not.toBeInTheDocument()
   })
 
   it('shows and dismisses load errors', async () => {
     const user = userEvent.setup()
     listAllBacktestsMock.mockRejectedValueOnce(new Error('network down'))
 
-    render(<BacktestDashboard />)
+    renderDashboard('/dashboard/run')
 
     expect(await screen.findByTestId('notification')).toHaveTextContent('Failed to load backtest list')
 

@@ -10,7 +10,6 @@
  */
 import React from 'react'
 import { buildApiUrl } from '../api/base'
-import { useLazyPlotComponent } from './useLazyPlotComponent'
 
 export interface CandlestickData {
   dates: string[]
@@ -233,20 +232,15 @@ export function CandlestickChart({
   const traces = buildCandlestickTraces(data, markers)
   const layout = buildChartLayout(ticker, width, height)
 
-  const [showModal, setShowModal] = React.useState(false)
-  // Period selector state (1M/3M/6M/1Y/ALL). Defaults to ALL.
   const [period, setPeriod] = React.useState<'1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL')
-  // Year quick selector (used to request pre-generated backtests like 2022/2023/2024/2025)
   const [year, setYear] = React.useState<string | null>(null)
-
-  // Background chart image (base64 data URI) fetched from backend latest results
   const [bgImage, setBgImage] = React.useState<string | null>(null)
-  // OHLC data for interactive charts (lightweight-charts)
   const [ohlcData, setOhlcData] = React.useState<any[] | null>(null)
   const chartContainerRef = React.useRef<HTMLDivElement | null>(null)
 
   // Fetch chart image for a specific period (client-side request to backend with optional range query)
   const fetchChartForPeriod = React.useCallback(async (p: string) => {
+    if (typeof window === 'undefined') return
     try {
       const res = await fetch(buildApiUrl(`/backtest/latest?range=${encodeURIComponent(p)}`))
       if (!res.ok) return
@@ -264,6 +258,7 @@ export function CandlestickChart({
 
   // Fetch OHLC JSON for interactive chart when a specific year is selected
   const fetchOhlcForYear = React.useCallback(async (y: string) => {
+    if (typeof window === 'undefined') return
     try {
       const res = await fetch(buildApiUrl(`/backtest/ohlc?ticker=${encodeURIComponent(ticker)}&range=${encodeURIComponent(y)}`))
       if (!res.ok) {
@@ -310,13 +305,8 @@ export function CandlestickChart({
     }
   }, [ticker, period, fetchChartForPeriod])
 
-  // Modal view mode: initially show enlarged image, user can switch to interactive plot
-  const [modalMode, setModalMode] = React.useState<'image' | 'plot'>('image')
-  const shouldLoadInteractivePlot = showModal && modalMode === 'plot'
-  const { PlotComponent, plotError } = useLazyPlotComponent(shouldLoadInteractivePlot)
   // Zoom and pan temporarily disabled
   // const [zoomScale, setZoomScale] = React.useState<number>(1)
-  const zoomStep = 0.25
   // const [imgOffset, setImgOffset] = React.useState<{x:number,y:number}>({x:0,y:0})
   // const [isDragging, setIsDragging] = React.useState(false)
   // const [lastMousePos, setLastMousePos] = React.useState<{x:number,y:number}|null>(null)
@@ -361,13 +351,6 @@ export function CandlestickChart({
     }
   }, [ohlcData, width, height])
 
-  const onWheelZoom = (e: React.WheelEvent) => {
-    // zoom disabled
-    return
-  }
-
-  const resetZoom = () => { /* zoom reset disabled */ }
-
   let layoutWithImage: any = layout as any
 
   // If no per-ticker background image is available, generate a static PNG from Plotly traces/layout
@@ -376,12 +359,11 @@ export function CandlestickChart({
     async function generateImageFromPlot() {
       try {
         if (bgImage) return
-        if (!showModal || modalMode !== 'image') return
         if (typeof document === 'undefined') return
+        if (typeof navigator !== 'undefined' && navigator.userAgent.includes('jsdom')) return
 
-        // If traces include a candlestick trace, use Plotly to render a faithful image
         const hasCandlestick = (traces || []).some((t: any) => t && t.type === 'candlestick')
-        if (hasCandlestick && PlotComponent) {
+        if (hasCandlestick) {
           try {
             const Plotly = await import('plotly.js-dist-min')
             // Create offscreen div
@@ -574,19 +556,7 @@ export function CandlestickChart({
     return () => {
       cancelled = true
     }
-  }, [showModal, modalMode, PlotComponent, bgImage, traces, layoutWithImage, ticker])
-
-  // Prevent background scrolling when modal is open and restore on close
-  React.useEffect(() => {
-    if (typeof document === 'undefined') return
-    const prev = document.body.style.overflow
-    if (showModal) {
-      document.body.style.overflow = 'hidden'
-    }
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [showModal])
+  }, [bgImage, traces, layoutWithImage, ticker])
 
   // If a background image is available, add it to the Plotly layout so it scales with the plot
   const computedLayoutWithImage = React.useMemo(() => {
@@ -667,21 +637,12 @@ export function CandlestickChart({
         <p data-testid="no-data-message">No chart data available</p>
       ) : (
         <div data-testid="plotly-chart">
-          {/* In production, this would use react-plotly.js Plot component */}
-          {/* Static placeholder for testability; clicking opens interactive modal */}
-
           <div
-            role="button"
-            tabIndex={0}
             ref={chartContainerRef}
-            onClick={() => { setModalMode('image'); setShowModal(true) }}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (setModalMode('image'), setShowModal(true))}
             data-testid="chart-rendered"
             data-traces={JSON.stringify(traces.length)}
             data-ticker={ticker}
             style={{
-              outline: 'none',
-              cursor: 'zoom-in',
               minHeight: 200,
               display: 'flex',
               alignItems: 'center',
@@ -691,103 +652,28 @@ export function CandlestickChart({
               width: '100%'
             }}
           >
-            {/* If interactive OHLC is available, lightweight-charts will render into this container. Otherwise bgImage is used as background. */}
-            {(!ohlcData && bgImage) && (
-              <img src={bgImage} alt={`${ticker} price chart`} style={{ width: '100%', display: 'block' }} />
-            )}
-
-            <div
-              style={{
-                outline: 'none',
-                cursor: 'zoom-in',
-                minHeight: 200,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundImage: bgImage ? `url(${bgImage})` : undefined,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                width: '100%',
-                height: 260,
-              }}
-            >
-              <div style={{background: 'rgba(0,0,0,0.45)', padding: 8, borderRadius: 6, color: '#fff'}}>
-                {ticker} • {traces.length} traces
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
-      {/* Full-screen interactive modal */}
-      {showModal && (
-        <div className="candlestick-modal" role="dialog" aria-modal="true">
-          <div className="candlestick-modal-content">
-            <button className="modal-close" onClick={() => { setShowModal(false); resetZoom(); setModalMode('image') }} aria-label="Close">×</button>
-
-            {/* Image-first modal: allow zoom/pan on the image, then user can switch to interactive plot */}
-            {modalMode === 'image' ? (
-              <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div style={{ color: THEME.textColor }}>{ticker} — 拡大画像</div>
-                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                    {/* Zoom controls temporarily disabled */}
-                    <button onClick={() => setModalMode('plot')} aria-label="Open interactive chart">詳細を開く</button>
-                  </div>
-                </div>
-
-                <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-                  {bgImage ? (
-                    <img
-                      data-testid="chart-modal-image"
-                      src={bgImage}
-                      alt={`${ticker} chart`}
-                      style={{ maxWidth: '100%', maxHeight: '100%', display: 'block', touchAction: 'none' }}
-                      draggable={false}
-                    />
-                  ) : (
-                    <div style={{ color: THEME.textColor }}>No background image available</div>
-                  )}
+            {!ohlcData && (
+              <div
+                style={{
+                  minHeight: 200,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  width: '100%',
+                  height: 260,
+                }}
+              >
+                <div style={{background: 'rgba(0,0,0,0.45)', padding: 8, borderRadius: 6, color: '#fff'}}>
+                  {ticker} • {traces.length} traces
                 </div>
               </div>
-            ) : (
-              plotError ? (
-                <div style={{padding:20}}>
-                  <p style={{color: THEME.textColor}}>Interactive chart unavailable: {plotError}</p>
-                </div>
-              ) : PlotComponent ? (
-                <div style={{ width: '100%', height: '100%' }}>
-                  <div style={{ padding: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ color: THEME.textColor }}>{ticker} — インタラクティブ表示</div>
-                    <div style={{ marginLeft: 'auto' }}>
-                      <button onClick={() => setModalMode('image')}>画像表示に戻る</button>
-                    </div>
-                  </div>
-                  <div style={{ width: '100%', height: 'calc(100% - 48px)' }}>
-                    <PlotComponent
-                      data={traces as any}
-                      layout={layoutWithImage as any}
-                      config={{responsive: true, scrollZoom: false}}
-                      useResizeHandler
-                      style={{width: '100%', height: '100%'}}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div style={{padding:20}}>Loading interactive chart...</div>
-              )
             )}
-
           </div>
-          <style>{`
-            .candlestick-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:2000; }
-            .candlestick-modal-content { position: relative; width: 90vw; height: 85vh; background: ${THEME.background}; border-radius:8px; overflow:hidden; }
-            .modal-close { position:absolute; top:10px; right:10px; z-index:2010; background:rgba(255,255,255,0.08); color:${THEME.textColor}; border:none; width:40px; height:40px; border-radius:6px; font-size:22px; cursor:pointer; }
-            .candlestick-modal-content button { background: rgba(255,255,255,0.06); color: ${THEME.textColor}; border: none; padding: 6px 10px; border-radius:6px; cursor:pointer }
-          `}</style>
+
         </div>
       )}
     </div>

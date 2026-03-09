@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TradeTable } from './TradeTable'
 import type { TradeRecord } from '../api/backtest'
+import i18n from '../i18n'
 
 function buildTrade(index: number, overrides: Partial<TradeRecord> = {}): TradeRecord {
   return {
@@ -39,6 +40,7 @@ describe('TradeTable', () => {
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    void i18n.changeLanguage('en')
   })
 
   afterEach(() => {
@@ -110,5 +112,23 @@ describe('TradeTable', () => {
     expect(within(row).getAllByText('-')).toHaveLength(4)
     expect(within(row).getAllByText('$0.00')).toHaveLength(3)
     expect(within(row).getByText('0.00%')).toBeInTheDocument()
+  })
+
+  it('translates exit reasons and renders compact mobile cards', async () => {
+    await i18n.changeLanguage('ja')
+
+    render(
+      <TradeTable
+        trades={[
+          buildTrade(1, { ticker: 'MOBILE', exit_reason: 'stop_loss' }),
+          buildTrade(2, { ticker: 'WINNER', exit_reason: 'target_reached' }),
+        ]}
+      />,
+    )
+
+    expect(screen.getByTestId('trade-cards')).toBeInTheDocument()
+    expect(screen.getAllByText('損切り').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('利確').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('📅').length).toBeGreaterThan(0)
   })
 })
