@@ -39,6 +39,12 @@ jobs:
       - name: Install Python dependencies
         run: python/.venv/bin/pip install -r python/requirements.txt
 
+      - name: Run documentation integrity checks
+        run: |
+          source python/.venv/bin/activate
+          python scripts/check_docs.py
+        shell: bash
+
       - name: Run backend tests with coverage gate
         run: |
           source python/.venv/bin/activate

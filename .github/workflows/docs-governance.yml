@@ -1,0 +1,87 @@
+name: Docs Governance
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'README.md'
+      - 'ARCHITECTURE.md'
+      - 'COMMAND.md'
+      - 'docs/**'
+      - 'scripts/check_docs.py'
+      - 'scripts/doc_gardening.py'
+      - '.github/workflows/docs-governance.yml'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'ARCHITECTURE.md'
+      - 'COMMAND.md'
+      - 'docs/**'
+      - 'scripts/check_docs.py'
+      - 'scripts/doc_gardening.py'
+      - '.github/workflows/docs-governance.yml'
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  docs-lint:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: Check documentation integrity
+        run: python scripts/check_docs.py
+
+  doc-gardening:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: Refresh managed documentation artifacts
+        run: python scripts/doc_gardening.py
+
+      - name: Create documentation pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/doc-gardening
+          delete-branch: true
+          commit-message: "docs: refresh managed documentation"
+          title: "docs: refresh managed documentation"
+          body: |
+            ## Summary
+            - refresh generated documentation inventory
+            - refresh managed documentation indexes
+            - keep documentation governance artifacts in sync with the repository
+
+            This PR was created automatically by the scheduled doc-gardening workflow.
+          labels: |
+            documentation
+            automation

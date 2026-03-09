@@ -123,6 +123,16 @@ npm --prefix frontend run test -- --run
 npm --prefix frontend run test:coverage
 ```
 
+documentation:
+
+```bash
+cd ~/code/Invest/python
+source .venv/bin/activate
+cd ~/code/Invest
+python scripts/doc_gardening.py
+python scripts/check_docs.py
+```
+
 contract drift:
 
 ```bash

@@ -247,6 +247,18 @@ npm run build
 
 `npm run test:e2e` は fixture を backend に読み込ませ、frontend ダッシュボードが実データを描画できることを確認します。
 
+## Documentation system
+
+このリポジトリは大きな単一マニュアルではなく、索引と責務分離を前提にした知識ベースとしてドキュメントを管理します。
+
+- `docs/DOCUMENTATION_SYSTEM.md` - ドキュメント構造の入口
+- `ARCHITECTURE.md` - どの層に何を書くかの地図
+- `docs/design-docs/index.md` - 設計判断の索引
+- `docs/product-specs/index.md` - 仕様書の索引
+- `docs/generated/doc-inventory.md` - 自動生成されるドキュメント在庫表
+
+ドキュメント整合性は `python scripts/check_docs.py` で検証し、機械的に更新できる索引・在庫表は `python scripts/doc_gardening.py` で再生成します。
+
 ## CI / GitHub Actions
 
 `.github/workflows/ci.yml` では次を自動検証します。
@@ -257,6 +269,9 @@ npm run build
 - fixture ベース E2E
 - root `npm run build`
 - `docker compose config` と `docker compose build`
+- `python scripts/check_docs.py` によるドキュメント整合性チェック
+
+`.github/workflows/docs-governance.yml` では、push / pull_request で docs lint を実行し、schedule / workflow_dispatch では doc-gardening を走らせて差分を自動 PR 化します。
 
 契約差分をローカルで確認したい場合:
 
@@ -268,9 +283,20 @@ python -m backend.scripts.export_frontend_contracts
 git diff -- frontend/src/api/generated/contracts.ts
 ```
 
+ドキュメント在庫表と索引の再生成:
+
+```bash
+cd python
+source .venv/bin/activate
+cd ..
+python scripts/doc_gardening.py
+python scripts/check_docs.py
+```
+
 ## 参考ドキュメント
 
 - `ARCHITECTURE.md` - システム構造と責務分離
+- `docs/DOCUMENTATION_SYSTEM.md` - ドキュメント構造と鮮度維持ルール
 - `COMMAND.md` - 手動実行コマンド集
 - `docs/DESIGN.md` - UI / UX 設計原則
 - `docs/PRODUCT_SENSE.md` - プロダクト方針

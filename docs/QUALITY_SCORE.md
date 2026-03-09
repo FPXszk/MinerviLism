@@ -23,6 +23,12 @@ CI ゲート
   - 全テスト通過
   - 型チェック通過
   - 重要な契約テスト通過
+  - `python scripts/check_docs.py` によるドキュメント整合性チェック通過
+
+ドキュメント鮮度の維持
+- 索引ファイルと `docs/generated/doc-inventory.md` は `python scripts/doc_gardening.py` で機械再生成できる状態を保つ。
+- `.github/workflows/docs-governance.yml` は push / pull_request でドキュメント lint を実行し、schedule では doc-gardening PR を作成する。
+- 人間の判断が必要な説明文はレビュー対象に残し、機械的に更新できる目次・在庫表だけを自動修正する。
 
 運用上の注意
 - テストはネットワークに依存しないこと。外部依存は全てモックする。
