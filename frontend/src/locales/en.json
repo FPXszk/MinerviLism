@@ -52,6 +52,7 @@
     "loadLatest": "Load Latest",
     "availableTests": "Available Tests",
     "noBacktests": "No backtests found",
+    "pinnedLabel": "Pinned",
     "tradesCount": "{{count}} trades",
     "summaryTab": "Summary",
     "chartsTab": "Charts",

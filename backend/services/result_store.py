@@ -11,6 +11,17 @@ from loguru import logger
 
 OUTPUT_DIR_ENV_VAR = "INVEST_OUTPUT_DIR"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parents[2] / "python" / "output" / "backtest"
+PINNED_BACKTEST_PERIODS = (
+    "2020-01-01 to 2020-12-31",
+    "2021-01-01 to 2021-12-31",
+    "2022-01-01 to 2022-12-31",
+    "2023-01-01 to 2023-12-31",
+    "2024-01-01 to 2024-12-31",
+    "2025-01-01 to 2025-12-31",
+)
+PINNED_BACKTEST_PERIOD_ORDER = {
+    period: index for index, period in enumerate(PINNED_BACKTEST_PERIODS)
+}
 
 
 def get_backtest_output_dir() -> Path:
@@ -46,6 +57,28 @@ class ResultStore:
         return list(self._runs)
 
     def list_backtests(self) -> list[dict]:
+        pinned_runs: dict[str, BacktestRun] = {}
+        pinned_counts: dict[str, int] = {}
+        regular_runs: list[BacktestRun] = []
+
+        for run in self.list_runs():
+            if run.period in PINNED_BACKTEST_PERIOD_ORDER:
+                pinned_counts[run.period] = pinned_counts.get(run.period, 0) + 1
+                pinned_runs.setdefault(run.period, run)
+                continue
+            regular_runs.append(run)
+
+        ordered_runs: list[tuple[BacktestRun, bool, int]] = []
+        for period, run in sorted(
+            pinned_runs.items(),
+            key=lambda item: PINNED_BACKTEST_PERIOD_ORDER[item[0]],
+            reverse=True,
+        ):
+            ordered_runs.append((run, True, pinned_counts.get(period, 1)))
+
+        for run in regular_runs:
+            ordered_runs.append((run, False, 1))
+
         return [
             {
                 "timestamp": run.timestamp,
@@ -54,8 +87,10 @@ class ResultStore:
                 "period": run.period,
                 "trade_count": run.trade_count,
                 "dir_name": run.dir_name,
+                "is_pinned": is_pinned,
+                "available_runs": available_runs,
             }
-            for run in self.list_runs()
+            for run, is_pinned, available_runs in ordered_runs
         ]
 
     def get_latest_run(self) -> Optional[BacktestRun]:

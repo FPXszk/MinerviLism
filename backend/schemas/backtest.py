@@ -77,6 +77,8 @@ class BacktestMetadata(BaseModel):
     period: str
     trade_count: int
     dir_name: str
+    is_pinned: bool = False
+    available_runs: int = 1
 
 
 class BacktestListResponse(BaseModel):

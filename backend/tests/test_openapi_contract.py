@@ -40,3 +40,5 @@ def test_contract_export_generates_typescript_definitions(tmp_path):
     assert 'export type BacktestResults' in content
     assert 'export type JobResponse' in content
     assert 'export type TradeMarkers' in content
+    assert 'is_pinned?: boolean' in content
+    assert 'available_runs?: number' in content

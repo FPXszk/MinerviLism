@@ -18,6 +18,8 @@ export type BacktestMetadata = {
   period: string;
   trade_count: number;
   dir_name: string;
+  is_pinned?: boolean;
+  available_runs?: number;
 }
 
 export type BacktestRequest = {

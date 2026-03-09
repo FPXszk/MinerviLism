@@ -94,3 +94,29 @@ def test_result_store_manifest_contains_expected_paths():
     assert run.trades_path.name == 'trades.csv'
     assert run.ticker_stats_path is not None
     assert run.ticker_stats_path.name == 'ticker_stats.csv'
+
+
+def test_result_store_pins_target_periods_and_uses_latest_run_per_period(tmp_path):
+    from services.result_store import ResultStore
+
+    _write_result_set(tmp_path, 'backtest_2020-01-01_to_2020-12-31_20201231-000000')
+    _write_result_set(tmp_path, 'backtest_2024-01-01_to_2024-12-31_20241231-000000')
+    _write_result_set(tmp_path, 'backtest_2024-01-01_to_2024-12-31_20251231-000000')
+    _write_result_set(tmp_path, 'backtest_2025-01-01_to_2025-12-31_20251231-235959')
+    _write_result_set(tmp_path, 'backtest_2026-01-01_to_2026-12-31_20261231-000000')
+
+    store = ResultStore(tmp_path)
+
+    backtests = store.list_backtests()
+
+    assert [backtest['period'] for backtest in backtests[:3]] == [
+        '2025-01-01 to 2025-12-31',
+        '2024-01-01 to 2024-12-31',
+        '2020-01-01 to 2020-12-31',
+    ]
+    assert backtests[0]['is_pinned'] is True
+    assert backtests[1]['is_pinned'] is True
+    assert backtests[1]['available_runs'] == 2
+    assert backtests[1]['timestamp'] == '20251231-000000'
+    assert backtests[3]['period'] == '2026-01-01 to 2026-12-31'
+    assert backtests[3]['is_pinned'] is False

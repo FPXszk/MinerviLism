@@ -109,17 +109,29 @@ vi.mock('../components/TopBottomPurchaseCharts', () => ({
 
 const sampleBacktests = [
   {
+    timestamp: 'backtest_2025-01-01_to_2025-12-31_20251231-235959',
+    start_date: '2025-01-01',
+    end_date: '2025-12-31',
+    period: '2025-01-01 to 2025-12-31',
+    trade_count: 2,
+    dir_name: 'run-2025',
+    is_pinned: true,
+    available_runs: 1,
+  },
+  {
     timestamp: 'backtest_2026-01-01_to_2026-01-31_20260131-000000',
     start_date: '2026-01-01',
     end_date: '2026-01-31',
     period: '2026-01-01 to 2026-01-31',
     trade_count: 2,
     dir_name: 'run-a',
+    is_pinned: false,
+    available_runs: 1,
   },
 ]
 
 const sampleResults = {
-  timestamp: 'backtest_2026-01-01_to_2026-01-31_20260131-000000',
+  timestamp: 'backtest_2025-01-01_to_2025-12-31_20251231-235959',
   summary: {
     total_trades: 2,
     winning_trades: 1,
@@ -213,7 +225,8 @@ describe('BacktestDashboard', () => {
     render(<BacktestDashboard />)
 
     expect(await screen.findByRole('heading', { name: 'Backtest Dashboard' })).toBeInTheDocument()
-    expect(await screen.findByText('2026-01-01 to 2026-01-31')).toBeInTheDocument()
+    expect(await screen.findByText('2025-01-01 to 2025-12-31')).toBeInTheDocument()
+    expect(screen.getByText('Pinned')).toBeInTheDocument()
     expect(await screen.findByTestId('summary-view')).toHaveTextContent('2')
     expect(screen.getByTestId('backtest-status')).toHaveTextContent('idle:0')
   })

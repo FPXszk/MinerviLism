@@ -52,6 +52,7 @@
     "loadLatest": "最新を読み込む",
     "availableTests": "利用可能なテスト",
     "noBacktests": "バックテスト結果がありません",
+    "pinnedLabel": "固定",
     "tradesCount": "{{count}} 件のトレード",
     "summaryTab": "サマリー",
     "chartsTab": "チャート",

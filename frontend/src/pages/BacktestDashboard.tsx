@@ -194,7 +194,10 @@ export const BacktestDashboard: React.FC = () => {
                   className={`backtest-item ${selectedTimestamp === backtest.timestamp ? 'active' : ''}`}
                   onClick={() => setSelectedTimestamp(backtest.timestamp)}
                 >
-                  <div className="item-period">{backtest.period}</div>
+                  <div className="item-period">
+                    <span>{backtest.period}</span>
+                    {backtest.is_pinned && <span className="backtest-badge">{t('dashboard.pinnedLabel')}</span>}
+                  </div>
                   <div className="item-details">
                     <span>{t('dashboard.tradesCount', { count: backtest.trade_count })}</span>
                   </div>
@@ -534,12 +537,30 @@ export const BacktestDashboard: React.FC = () => {
         }
 
         .item-period {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
           font-size: 12px;
           font-weight: 700;
           color: var(--text-primary, #0f172a);
         }
 
+        .backtest-badge {
+          padding: 2px 8px;
+          border-radius: 999px;
+          background: rgba(59, 130, 246, 0.15);
+          color: #1d4ed8;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          white-space: nowrap;
+        }
+
         .item-details {
+          display: flex;
+          justify-content: space-between;
+          gap: 8px;
           font-size: 11px;
           color: var(--text-muted, #94a3b8);
           margin-top: 4px;
