@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            if (id.includes('react-plotly.js') || id.includes('plotly.js')) return 'plotly-vendor'
             if (id.includes('TopBottomPurchaseCharts')) return 'top-bottom-chart';
           },
         },

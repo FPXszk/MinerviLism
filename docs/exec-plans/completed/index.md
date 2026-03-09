@@ -3,5 +3,10 @@
 完了した実行計画の記録を置きます。
 完了プランには実施内容のサマリと参照 PR/コミットを残してください。
 
-例:
-- cleanup-documents — 古いドキュメント削除と COMMAND.md 統合（PR: #123, commits: abcdef）
+<!-- BEGIN AUTO-GENERATED DOC LIST -->
+- [ci-automation.md](ci-automation.md) — ci-automation — - タイトル: Docker / 契約生成の CI 自動検証
+- [create-root-readme.md](create-root-readme.md) — create-root-readme — - タイトル: ルート README.md の新規作成と改善提案整理
+- [doc-freshness-governance.md](doc-freshness-governance.md) — 実装計画: ドキュメント整合性監査と鮮度維持の自動化 — - タイトル: ドキュメント整合性監査と鮮度維持の自動化
+- [foundation-improvements.md](foundation-improvements.md) — foundation-improvements — - タイトル: 基盤改善一式の実装
+- [improvement-round-1.md](improvement-round-1.md) — 変更・削除・作成するファイル — - frontend/src/pages/BacktestDashboard.test.tsx ほか frontend テスト群
+<!-- END AUTO-GENERATED DOC LIST -->

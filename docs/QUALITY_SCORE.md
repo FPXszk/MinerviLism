@@ -26,7 +26,7 @@ CI ゲート
   - `python scripts/check_docs.py` によるドキュメント整合性チェック通過
 
 ドキュメント鮮度の維持
-- 索引ファイルと `docs/generated/doc-inventory.md` は `python scripts/doc_gardening.py` で機械再生成できる状態を保つ。
+- 索引ファイル（`docs/design-docs/index.md`, `docs/exec-plans/active/index.md`, `docs/exec-plans/completed/index.md`, `docs/product-specs/index.md`）と `docs/generated/doc-inventory.md` は `python scripts/doc_gardening.py` で機械再生成できる状態を保つ。
 - `.github/workflows/docs-governance.yml` は push / pull_request でドキュメント lint を実行し、schedule では doc-gardening PR を作成する。
 - 人間の判断が必要な説明文はレビュー対象に残し、機械的に更新できる目次・在庫表だけを自動修正する。
 

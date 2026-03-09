@@ -1,5 +1,4 @@
 import React from 'react'
-import Plot from 'react-plotly.js'
 import { CandlestickChart } from './CandlestickChart'
 import { TradeRecord, TickerStats } from '../api/backtest'
 

@@ -2,18 +2,38 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import TopBottomPurchaseChart from './TopBottomPurchaseChart'
 
+const { useLazyPlotComponentMock } = vi.hoisted(() => ({
+  useLazyPlotComponentMock: vi.fn(),
+}))
+
 const plotCalls: unknown[] = []
 
-vi.mock('react-plotly.js', () => ({
-  default: (props: unknown) => {
-    plotCalls.push(props)
-    return <div data-testid="plotly-chart" />
-  },
+vi.mock('./useLazyPlotComponent', () => ({
+  useLazyPlotComponent: useLazyPlotComponentMock,
 }))
+
+function PlotMock(props: unknown) {
+  plotCalls.push(props)
+  return <div data-testid="plotly-chart" />
+}
 
 describe('TopBottomPurchaseChart', () => {
   beforeEach(() => {
     plotCalls.length = 0
+    useLazyPlotComponentMock.mockReturnValue({
+      PlotComponent: PlotMock,
+      plotError: null,
+    })
+  })
+
+  it('shows a loading state before the Plotly chunk resolves', () => {
+    useLazyPlotComponentMock.mockReturnValue({
+      PlotComponent: null,
+      plotError: null,
+    })
+    render(<TopBottomPurchaseChart title="AAA purchases" data={[]} />)
+
+    expect(screen.getByTestId('plotly-loading')).toBeInTheDocument()
   })
 
   it('renders a scatter chart with clamped marker sizes', () => {
@@ -28,12 +48,13 @@ describe('TopBottomPurchaseChart', () => {
       />,
     )
 
+    expect(screen.getByTestId('plotly-chart')).toBeInTheDocument()
+
     const firstCall = plotCalls[0] as {
       data: Array<{ type: string; marker: { size: number[] } }>
     }
 
     expect(screen.getByText('AAA purchases')).toBeInTheDocument()
-    expect(screen.getByTestId('plotly-chart')).toBeInTheDocument()
     expect(firstCall.data[0].type).toBe('scatter')
     expect(firstCall.data[0].marker.size).toEqual([6, 28, 8])
   })
@@ -46,6 +67,7 @@ describe('TopBottomPurchaseChart', () => {
     }))
 
     render(<TopBottomPurchaseChart title="Large chart" data={data} />)
+    expect(screen.getByTestId('plotly-chart')).toBeInTheDocument()
 
     const firstCall = plotCalls[0] as {
       data: Array<{ type: string }>

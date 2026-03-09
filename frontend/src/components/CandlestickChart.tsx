@@ -10,6 +10,7 @@
  */
 import React from 'react'
 import { buildApiUrl } from '../api/base'
+import { useLazyPlotComponent } from './useLazyPlotComponent'
 
 export interface CandlestickData {
   dates: string[]
@@ -233,8 +234,7 @@ export function CandlestickChart({
   const layout = buildChartLayout(ticker, width, height)
 
   const [showModal, setShowModal] = React.useState(false)
-  const [PlotComponent, setPlotComponent] = React.useState<any>(null)
-  const [plotError, setPlotError] = React.useState<string | null>(null)
+  const { PlotComponent, plotError } = useLazyPlotComponent()
 
   // Period selector state (1M/3M/6M/1Y/ALL). Defaults to ALL.
   const [period, setPeriod] = React.useState<'1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL')
@@ -311,24 +311,6 @@ export function CandlestickChart({
       mounted = false
     }
   }, [ticker, period, fetchChartForPeriod])
-
-  // Load Plotly component lazily on mount so preview can render markers over image
-  React.useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const mod = await import('react-plotly.js')
-        if (!mounted) return
-        setPlotComponent(() => (mod && (mod.default || mod)))
-      } catch (err: any) {
-        // Non-fatal: interactive charts will be unavailable in some environments
-        if (!mounted) return
-      }
-    })()
-    return () => {
-      mounted = false
-    }
-  }, [])
 
   // Modal view mode: initially show enlarged image, user can switch to interactive plot
   const [modalMode, setModalMode] = React.useState<'image' | 'plot'>('image')

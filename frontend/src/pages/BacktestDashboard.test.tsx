@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BacktestDashboard } from './BacktestDashboard'
@@ -150,9 +150,27 @@ const runningJob = {
   timeout_seconds: 600,
 }
 
+let consoleErrorSpy: {
+  mock: { calls: unknown[][] }
+  mockRestore: () => void
+}
+
+async function flushAsyncUpdates() {
+  await Promise.resolve()
+  await Promise.resolve()
+}
+
+async function clickAndFlush(user: ReturnType<typeof userEvent.setup>, target: Element) {
+  await act(async () => {
+    await user.click(target)
+    await flushAsyncUpdates()
+  })
+}
+
 describe('BacktestDashboard', () => {
   beforeEach(() => {
     vi.useRealTimers()
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
@@ -180,6 +198,14 @@ describe('BacktestDashboard', () => {
   })
 
   afterEach(() => {
+    expect(
+      consoleErrorSpy.mock.calls.filter(
+        ([message]) =>
+          typeof message === 'string'
+          && (message.includes('not wrapped in act') || message.includes('suspended resource finished loading')),
+      ),
+    ).toEqual([])
+    consoleErrorSpy.mockRestore()
     vi.useRealTimers()
   })
 
@@ -199,10 +225,10 @@ describe('BacktestDashboard', () => {
 
     expect(await screen.findByTestId('summary-view')).toHaveTextContent('2')
 
-    await user.click(screen.getByRole('button', { name: 'Load Latest' }))
+    await clickAndFlush(user, screen.getByRole('button', { name: 'Load Latest' }))
     await waitFor(() => expect(fetchLatestBacktestMock).toHaveBeenCalledTimes(1))
 
-    await user.click(screen.getAllByRole('button', { name: 'Run job' })[0])
+    await clickAndFlush(user, screen.getAllByRole('button', { name: 'Run job' })[0])
     await waitFor(() => expect(createJobMock).toHaveBeenCalledWith({
       command: 'backtest',
       start_date: '2024-01-01',
@@ -211,7 +237,7 @@ describe('BacktestDashboard', () => {
     expect(await screen.findByTestId('run-panel-status')).toHaveTextContent('running')
     expect(screen.getByTestId('run-panel-logs')).toHaveTextContent('line-a|line-b')
 
-    await user.click(screen.getAllByRole('button', { name: 'Cancel job' })[0])
+    await clickAndFlush(user, screen.getAllByRole('button', { name: 'Cancel job' })[0])
     await waitFor(() => expect(cancelJobMock).toHaveBeenCalledWith('job-1'))
   })
 
@@ -220,15 +246,18 @@ describe('BacktestDashboard', () => {
 
     expect(await screen.findByTestId('summary-view')).toHaveTextContent('2')
 
-    screen.getAllByRole('button', { name: 'Run job' })[0].click()
-    await waitFor(() => expect(createJobMock).toHaveBeenCalledTimes(1))
+    vi.useFakeTimers()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTimeAsync })
+    await clickAndFlush(user, screen.getAllByRole('button', { name: 'Run job' })[0])
+    expect(createJobMock).toHaveBeenCalledTimes(1)
 
-    await waitFor(() => expect(getJobMock).toHaveBeenCalledWith('job-1'), {
-      timeout: 5000,
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+      await flushAsyncUpdates()
     })
-    await waitFor(() => expect(fetchLatestBacktestMock).toHaveBeenCalledTimes(1), {
-      timeout: 5000,
-    })
+
+    expect(getJobMock).toHaveBeenCalledWith('job-1')
+    expect(fetchLatestBacktestMock).toHaveBeenCalledTimes(1)
   }, 10000)
 
   it('renders run, charts, and trades tabs on mobile', async () => {
@@ -243,10 +272,10 @@ describe('BacktestDashboard', () => {
 
     expect(await screen.findAllByTestId('run-panel')).toHaveLength(1)
 
-    await user.click(screen.getByRole('button', { name: 'Charts' }))
+    await clickAndFlush(user, screen.getByRole('button', { name: 'Charts' }))
     expect(await screen.findByTestId('charts-view')).toHaveTextContent('charts:2')
 
-    await user.click(screen.getByRole('button', { name: 'Trades' }))
+    await clickAndFlush(user, screen.getByRole('button', { name: 'Trades' }))
     expect(await screen.findByTestId('trades-view')).toHaveTextContent('2')
   })
 
@@ -258,7 +287,7 @@ describe('BacktestDashboard', () => {
 
     expect(await screen.findByTestId('notification')).toHaveTextContent('Failed to load backtest list')
 
-    await user.click(screen.getByRole('button', { name: 'Dismiss notification' }))
+    await clickAndFlush(user, screen.getByRole('button', { name: 'Dismiss notification' }))
     await waitFor(() => expect(screen.queryByTestId('notification')).not.toBeInTheDocument())
   })
 })

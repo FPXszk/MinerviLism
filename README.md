@@ -251,11 +251,13 @@ npm run build
 
 このリポジトリは大きな単一マニュアルではなく、索引と責務分離を前提にした知識ベースとしてドキュメントを管理します。
 
-- `docs/DOCUMENTATION_SYSTEM.md` - ドキュメント構造の入口
-- `ARCHITECTURE.md` - どの層に何を書くかの地図
-- `docs/design-docs/index.md` - 設計判断の索引
-- `docs/product-specs/index.md` - 仕様書の索引
-- `docs/generated/doc-inventory.md` - 自動生成されるドキュメント在庫表
+- [docs/DOCUMENTATION_SYSTEM.md](docs/DOCUMENTATION_SYSTEM.md) - ドキュメント構造の入口
+- [ARCHITECTURE.md](ARCHITECTURE.md) - どの層に何を書くかの地図
+- [docs/design-docs/index.md](docs/design-docs/index.md) - 設計判断の索引
+- [docs/exec-plans/active/index.md](docs/exec-plans/active/index.md) - 進行中の実装計画
+- [docs/exec-plans/completed/index.md](docs/exec-plans/completed/index.md) - 完了済みの実装計画
+- [docs/product-specs/index.md](docs/product-specs/index.md) - 仕様書の索引
+- [docs/generated/doc-inventory.md](docs/generated/doc-inventory.md) - 自動生成されるドキュメント在庫表
 
 ドキュメント整合性は `python scripts/check_docs.py` で検証し、機械的に更新できる索引・在庫表は `python scripts/doc_gardening.py` で再生成します。
 
@@ -295,9 +297,9 @@ python scripts/check_docs.py
 
 ## 参考ドキュメント
 
-- `ARCHITECTURE.md` - システム構造と責務分離
-- `docs/DOCUMENTATION_SYSTEM.md` - ドキュメント構造と鮮度維持ルール
-- `COMMAND.md` - 手動実行コマンド集
+- [ARCHITECTURE.md](ARCHITECTURE.md) - システム構造と責務分離
+- [docs/DOCUMENTATION_SYSTEM.md](docs/DOCUMENTATION_SYSTEM.md) - ドキュメント構造と鮮度維持ルール
+- [COMMAND.md](COMMAND.md) - 手動実行コマンド集
 - `docs/DESIGN.md` - UI / UX 設計原則
 - `docs/PRODUCT_SENSE.md` - プロダクト方針
 - `docs/QUALITY_SCORE.md` - 品質基準

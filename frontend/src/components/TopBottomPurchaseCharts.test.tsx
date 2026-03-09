@@ -7,8 +7,8 @@ import {
 } from './TopBottomPurchaseCharts'
 import { TradeRecord, TickerStats } from '../api/backtest'
 
-vi.mock('react-plotly.js', () => ({
-  default: () => <div data-testid="plotly-chart" />,
+vi.mock('./CandlestickChart', () => ({
+  CandlestickChart: () => <div data-testid="candlestick-chart" />,
 }))
 
 const trades: TradeRecord[] = [
@@ -87,5 +87,6 @@ describe('TopBottomPurchaseCharts', () => {
     render(<TopBottomPurchaseCharts trades={trades} tickerStats={stats} limit={1} />)
     expect(screen.getByTestId('purchase-charts')).toBeInTheDocument()
     expect(screen.getAllByTestId('purchase-chart-card')).toHaveLength(2)
+    expect(screen.getAllByTestId('candlestick-chart')).toHaveLength(2)
   })
 })

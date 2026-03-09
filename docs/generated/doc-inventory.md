@@ -16,6 +16,15 @@
   - [index.md](../design-docs/index.md) — design-docs — 目的
 - `docs/exec-plans/`
   - [tech-debt-tracker.md](../exec-plans/tech-debt-tracker.md) — tech-debt-tracker — 目的: 技術的負債の一覧と優先度管理
+  - `docs/exec-plans/active/`
+    - [index.md](../exec-plans/active/index.md) — exec-plans/active — ここには現在進行中の実行計画を置きます。
+  - `docs/exec-plans/completed/`
+    - [index.md](../exec-plans/completed/index.md) — exec-plans/completed — 完了した実行計画の記録を置きます。
+    - [ci-automation.md](../exec-plans/completed/ci-automation.md) — ci-automation — - タイトル: Docker / 契約生成の CI 自動検証
+    - [create-root-readme.md](../exec-plans/completed/create-root-readme.md) — create-root-readme — - タイトル: ルート README.md の新規作成と改善提案整理
+    - [doc-freshness-governance.md](../exec-plans/completed/doc-freshness-governance.md) — 実装計画: ドキュメント整合性監査と鮮度維持の自動化 — - タイトル: ドキュメント整合性監査と鮮度維持の自動化
+    - [foundation-improvements.md](../exec-plans/completed/foundation-improvements.md) — foundation-improvements — - タイトル: 基盤改善一式の実装
+    - [improvement-round-1.md](../exec-plans/completed/improvement-round-1.md) — 変更・削除・作成するファイル — - frontend/src/pages/BacktestDashboard.test.tsx ほか frontend テスト群
 - `docs/product-specs/`
   - [index.md](../product-specs/index.md) — product-specs — 目的
 - `docs/references/`

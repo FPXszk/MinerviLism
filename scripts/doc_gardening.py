@@ -124,6 +124,23 @@ def build_inventory_markdown(repo_root: Path) -> str:
             if summary:
                 entry += f' — {summary}'
             lines.append(entry)
+        for subsection in sorted(path for path in section.iterdir() if path.is_dir()):
+            lines.append(f'  - `{subsection.relative_to(repo_root).as_posix()}/`')
+            subsection_index = subsection / 'index.md'
+            if subsection_index.exists():
+                title, summary = extract_title_and_summary(subsection_index)
+                link = Path('..') / subsection_index.relative_to(docs_root)
+                entry = f'    - [{subsection_index.name}]({link.as_posix()}) — {title}'
+                if summary:
+                    entry += f' — {summary}'
+                lines.append(entry)
+            for doc in iter_markdown_files(subsection):
+                title, summary = extract_title_and_summary(doc)
+                link = Path('..') / doc.relative_to(docs_root)
+                entry = f'    - [{doc.name}]({link.as_posix()}) — {title}'
+                if summary:
+                    entry += f' — {summary}'
+                lines.append(entry)
 
     generated_root = docs_root / 'generated'
     if generated_root.exists():
@@ -157,6 +174,16 @@ def expected_managed_files(repo_root: Path) -> dict[Path, str]:
         docs_root / 'product-specs' / 'index.md': render_index_file(
             docs_root / 'product-specs' / 'index.md',
             docs_root / 'product-specs',
+            repo_root,
+        ),
+        docs_root / 'exec-plans' / 'active' / 'index.md': render_index_file(
+            docs_root / 'exec-plans' / 'active' / 'index.md',
+            docs_root / 'exec-plans' / 'active',
+            repo_root,
+        ),
+        docs_root / 'exec-plans' / 'completed' / 'index.md': render_index_file(
+            docs_root / 'exec-plans' / 'completed' / 'index.md',
+            docs_root / 'exec-plans' / 'completed',
             repo_root,
         ),
         repo_root / INVENTORY_RELATIVE_PATH: build_inventory_markdown(repo_root),

@@ -9,7 +9,7 @@
 - frontend/: React + TypeScript 表示層（計算ロジック禁止）。API からのデータを表示するのみ。
 - electron-launcher.js: デスクトップ起動用ラッパー（必要に応じて）。
 - output/: python 側が生成する結果（backtest の出力フォルダ、charts/*.png, trades.csv 等）。
-- docs/: 開発ドキュメント群。`docs/DOCUMENTATION_SYSTEM.md` を入口に、索引から必要な深さへ段階的にたどる。
+- docs/: 開発ドキュメント群。[docs/DOCUMENTATION_SYSTEM.md](docs/DOCUMENTATION_SYSTEM.md) を入口に、索引から必要な深さへ段階的にたどる。
 
 責務分離
 - python/: データ取得、処理、戦略ロジック、バックテスト実行、PNG/CSV 等のアーティファクト生成。
@@ -34,22 +34,22 @@
   - src/components/TopBottomPurchaseCharts.tsx: ダッシュボード用のラッパー。CandlestickChart へマーカー等を渡す。
 - docs/
   - docs/design-docs/STRATEGY.md: 売買ロジックの仕様（必ずここを正とする）。
-  - COMMAND.md: 開発者向け操作コマンド集（WSL 特有コマンドは統合済み）。
+  - [COMMAND.md](COMMAND.md): 開発者向け操作コマンド集（WSL 特有コマンドは統合済み）。
   - ARCHITECTURE.md: （本ファイル）
 
 ドキュメントと編集ルール
-- ドキュメント全体の入口と役割分担は `docs/DOCUMENTATION_SYSTEM.md` を参照すること。
+- ドキュメント全体の入口と役割分担は [docs/DOCUMENTATION_SYSTEM.md](docs/DOCUMENTATION_SYSTEM.md) を参照すること。
 - 戦略ロジックの変更は `docs/design-docs/STRATEGY.md` を同時に更新すること。
-- 実行手順・検証コマンドの変更は `COMMAND.md` を更新すること。
+- 実行手順・検証コマンドの変更は [COMMAND.md](COMMAND.md) を更新すること。
 - 索引ファイルと生成ドキュメントの鮮度は `python scripts/check_docs.py` と `python scripts/doc_gardening.py` で検証・更新する。
 
 作業時の判断基準（どこに書くか）
 - コードの挙動・アルゴリズム変更 → python/ 内の該当ファイル + docs/design-docs/STRATEGY.md
 - API 仕様変更 → backend/api/*.py と型定義、さらに frontend の受け口コンポーネント
 - 表示ロジック・UI → frontend/src/components/ に実装。
-- 開発手順・コマンド → COMMAND.md
-- 設計思想やモジュール全体の責務 → ARCHITECTURE.md
-- ドキュメント構造と運用ルール → docs/DOCUMENTATION_SYSTEM.md
+- 開発手順・コマンド → [COMMAND.md](COMMAND.md)
+- 設計思想やモジュール全体の責務 → [ARCHITECTURE.md](ARCHITECTURE.md)
+- ドキュメント構造と運用ルール → [docs/DOCUMENTATION_SYSTEM.md](docs/DOCUMENTATION_SYSTEM.md)
 
 運用上の注意点
 - 出力ファイル（output/）は下流でのみ参照する。上流は下流のファイルフォーマットに依存しない。
