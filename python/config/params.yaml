@@ -112,6 +112,88 @@ experiment:
     - "cpu-friendly"
     - "qlib-inspired"
 
+strategy:
+  name: "rule-based-stage2"
+  entry_profile: "baseline"
+  exit_profile: "baseline"
+  stop_loss_pct: 0.03
+  target_pct: 0.25
+  max_hold_days: 90
+
+strategy_profiles:
+  rule-based-stage2:
+    experiment_name: "minervini-stage2-baseline"
+    rule_profile: "strict-auto-fallback"
+    entry_profile: "baseline"
+    exit_profile: "baseline"
+    stop_loss_pct: 0.03
+    target_pct: 0.25
+    max_hold_days: 90
+    tags: ["baseline", "rule-based", "stage2"]
+  buffett-quality:
+    experiment_name: "buffett-quality-inspired"
+    rule_profile: "quality-compounder"
+    entry_profile: "quality"
+    exit_profile: "quality"
+    min_volume: 300000
+    volatility_max: 0.03
+    stop_loss_pct: 0.08
+    target_pct: 0.3
+    max_hold_days: 180
+    tags: ["trader-inspired", "quality", "buffett"]
+  soros-breakout:
+    experiment_name: "soros-breakout-inspired"
+    rule_profile: "macro-breakout"
+    entry_profile: "breakout"
+    exit_profile: "breakout"
+    min_volume: 300000
+    breakout_lookback: 20
+    breakout_buffer: 0.01
+    volume_spike_ratio: 1.1
+    atr_stop_multiplier: 2.0
+    stop_loss_pct: 0.06
+    target_pct: 0.2
+    max_hold_days: 45
+    tags: ["trader-inspired", "breakout", "soros"]
+  lynch-growth:
+    experiment_name: "lynch-growth-inspired"
+    rule_profile: "growth-at-reasonable-trend"
+    entry_profile: "growth"
+    exit_profile: "growth"
+    min_volume: 300000
+    near_52w_high_ratio: 0.82
+    stop_loss_pct: 0.07
+    target_pct: 0.22
+    max_hold_days: 120
+    tags: ["trader-inspired", "growth", "lynch"]
+  minervini-trend:
+    experiment_name: "minervini-trend-inspired"
+    rule_profile: "volatility-contraction-trend"
+    entry_profile: "trend"
+    exit_profile: "trend"
+    min_volume: 400000
+    near_52w_high_ratio: 0.88
+    rs_new_high_window: 30
+    rs_new_high_threshold: 0.93
+    volume_spike_ratio: 1.15
+    atr_stop_multiplier: 2.0
+    stop_loss_pct: 0.05
+    target_pct: 0.25
+    max_hold_days: 90
+    tags: ["trader-inspired", "trend", "minervini"]
+  dalio-balance:
+    experiment_name: "dalio-balance-inspired"
+    rule_profile: "balanced-trend"
+    entry_profile: "balanced"
+    exit_profile: "balanced"
+    min_volume: 300000
+    volatility_max: 0.02
+    ema_tolerance: 0.03
+    stop_loss_pct: 0.05
+    target_pct: 0.14
+    max_hold_days: 30
+    tags: ["trader-inspired", "balanced", "dalio"]
+
 # Output settings
 output:
   csv_path: "output/screening_results.csv"

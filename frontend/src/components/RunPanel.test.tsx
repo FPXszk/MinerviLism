@@ -64,12 +64,14 @@ describe('RunPanel', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('submits a backtest request with optional parameters', async () => {
+  it('submits a backtest request with optional parameters and selected strategy', async () => {
     const onRun = vi.fn().mockResolvedValue(undefined)
     const user = userEvent.setup()
 
     render(<RunPanel {...baseProps} onRun={onRun} />)
 
+    await selectAndFlush(user, screen.getByLabelText('Strategy'), 'buffett-quality')
+    await clickAndFlush(user, screen.getByRole('button', { name: '2020' }))
     await typeAndFlush(user, screen.getByLabelText('Tickers (comma-separated, optional)'), 'AAPL,MSFT')
     await clickAndFlush(user, screen.getByLabelText('Skip chart generation (--no-charts)'))
     await clearAndTypeAndFlush(user, screen.getByLabelText('Timeout (seconds)'), '1800')
@@ -78,8 +80,9 @@ describe('RunPanel', () => {
     await waitFor(() => {
       expect(onRun).toHaveBeenCalledWith({
         command: 'backtest',
-        start_date: '2024-01-01',
-        end_date: '2024-12-31',
+        start_date: '2020-01-01',
+        end_date: '2020-12-31',
+        strategy_name: 'buffett-quality',
         tickers: 'AAPL,MSFT',
         no_charts: true,
         timeout_seconds: 1800,

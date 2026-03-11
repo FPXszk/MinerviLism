@@ -73,6 +73,29 @@ describe('BacktestRunPage', () => {
       loading: false,
       selectedTimestamp: 'run-2025',
       setSelectedTimestamp,
+      pinnedAnnualResults: [
+        {
+          period: '2020-01-01 to 2020-12-31',
+          result: {
+            timestamp: 'run-2020',
+            summary: {
+              total_trades: 6,
+              total_pnl: 1200,
+              annual_return_pct: 0.14,
+              information_ratio: 0.9,
+              max_drawdown_pct: -0.07,
+              final_capital: 101200,
+              win_rate: 0.55,
+            },
+          },
+          error: null,
+        },
+        {
+          period: '2021-01-01 to 2021-12-31',
+          result: null,
+          error: 'Missing charts',
+        },
+      ],
       activeJob: { status: 'running' },
       jobLogs: ['line-a'],
       runError: null,
@@ -83,6 +106,10 @@ describe('BacktestRunPage', () => {
     render(<BacktestRunPage />)
 
     expect(screen.getByTestId('run-panel')).toHaveTextContent('running:1')
+    expect(screen.getByText('Pinned Annual Results')).toBeInTheDocument()
+    expect(screen.getByText('2020-01-01 to 2020-12-31')).toBeInTheDocument()
+    expect(screen.getByText('2021-01-01 to 2021-12-31')).toBeInTheDocument()
+    expect(screen.getByText('Missing charts')).toBeInTheDocument()
     expect(screen.getByText('Pinned')).toBeInTheDocument()
     expect(screen.getAllByText('baseline-run').length).toBeGreaterThan(0)
     expect(screen.getAllByText('qlib-inspired').length).toBeGreaterThan(0)

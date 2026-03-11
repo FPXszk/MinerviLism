@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import {
   TopBottomPurchaseCharts,
   buildTopBottomPurchaseCharts,
@@ -88,5 +89,17 @@ describe('TopBottomPurchaseCharts', () => {
     expect(screen.getByTestId('purchase-charts')).toBeInTheDocument()
     expect(screen.getAllByTestId('purchase-chart-card')).toHaveLength(2)
     expect(screen.getAllByTestId('candlestick-chart')).toHaveLength(2)
+  })
+
+  it('opens an expanded lightbox when a chart is selected', async () => {
+    const user = userEvent.setup()
+
+    render(<TopBottomPurchaseCharts trades={trades} tickerStats={stats} limit={1} />)
+
+    await act(async () => {
+      await user.click(screen.getAllByRole('button', { name: /expand AAA chart/i })[0])
+    })
+
+    expect(screen.getByRole('dialog', { name: /AAA chart lightbox/i })).toBeInTheDocument()
   })
 })

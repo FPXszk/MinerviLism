@@ -66,12 +66,12 @@ class ResultStore:
         self._ensure_cache()
         return list(self._runs)
 
-    def list_backtests(self) -> list[dict]:
+    def list_backtests(self, strategy_name: Optional[str] = None) -> list[dict]:
         pinned_runs: dict[str, BacktestRun] = {}
         pinned_counts: dict[str, int] = {}
         regular_runs: list[BacktestRun] = []
 
-        for run in self.list_runs():
+        for run in self._filter_runs_by_strategy(self.list_runs(), strategy_name):
             if not run.has_displayable_results:
                 continue
             if run.period in PINNED_BACKTEST_PERIOD_ORDER:
@@ -112,8 +112,8 @@ class ResultStore:
             for run, is_pinned, available_runs in ordered_runs
         ]
 
-    def get_latest_run(self) -> Optional[BacktestRun]:
-        runs = self.list_runs()
+    def get_latest_run(self, strategy_name: Optional[str] = None) -> Optional[BacktestRun]:
+        runs = self._filter_runs_by_strategy(self.list_runs(), strategy_name)
         return self._pick_best_run(runs)
 
     def get_run_by_dir_name(self, dir_name: str) -> Optional[BacktestRun]:
@@ -132,8 +132,8 @@ class ResultStore:
                 return run
         return None
 
-    def get_run_by_range(self, range_value: Optional[str]) -> Optional[BacktestRun]:
-        runs = self.list_runs()
+    def get_run_by_range(self, range_value: Optional[str], strategy_name: Optional[str] = None) -> Optional[BacktestRun]:
+        runs = self._filter_runs_by_strategy(self.list_runs(), strategy_name)
         if not runs:
             return None
         if not range_value:
@@ -233,6 +233,15 @@ class ResultStore:
                 )
             )
         return runs
+
+    @staticmethod
+    def _matches_strategy(run: BacktestRun, strategy_name: Optional[str]) -> bool:
+        if not strategy_name:
+            return True
+        return (run.strategy_name or "").strip() == strategy_name.strip()
+
+    def _filter_runs_by_strategy(self, runs: list[BacktestRun], strategy_name: Optional[str]) -> list[BacktestRun]:
+        return [run for run in runs if self._matches_strategy(run, strategy_name)]
 
     @staticmethod
     def _pick_best_run(runs: list[BacktestRun]) -> Optional[BacktestRun]:

@@ -108,6 +108,21 @@ export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = (
   loading = false,
   limit = 5,
 }) => {
+  const [expandedTicker, setExpandedTicker] = React.useState<PurchaseChartItem | null>(null)
+
+  React.useEffect(() => {
+    if (!expandedTicker) return undefined
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setExpandedTicker(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [expandedTicker])
+
   if (loading) {
     return <div className="purchase-charts loading">Loading charts...</div>
   }
@@ -128,9 +143,24 @@ export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = (
           <div className="purchase-card" key={`${item.group}-${item.ticker}`} data-testid="purchase-chart-card">
             <div className="purchase-card-title">
               <span>{item.ticker}</span>
-              <span className={`badge ${item.group}`}>{item.group === 'top' ? 'TOP' : 'BOTTOM'}</span>
+              <div className="purchase-card-actions">
+                <span className={`badge ${item.group}`}>{item.group === 'top' ? 'TOP' : 'BOTTOM'}</span>
+                <button
+                  type="button"
+                  className="purchase-expand-button"
+                  aria-label={`Expand ${item.ticker} chart`}
+                  onClick={() => setExpandedTicker(item)}
+                >
+                  Expand
+                </button>
+              </div>
             </div>
-            <div style={{ width: '100%' }}>
+            <button
+              type="button"
+              className="purchase-chart-button"
+              aria-label={`Expand ${item.ticker} chart`}
+              onClick={() => setExpandedTicker(item)}
+            >
               <CandlestickChart
                 ticker={item.ticker}
                 data={{ dates: [], open: [], high: [], low: [], close: [], volume: [] }}
@@ -138,10 +168,39 @@ export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = (
                 width={420}
                 height={240}
               />
-            </div>
+            </button>
           </div>
         ))}
       </div>
+
+      {expandedTicker ? (
+        <div
+          className="purchase-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${expandedTicker.ticker} chart lightbox`}
+          onClick={() => setExpandedTicker(null)}
+        >
+          <div className="purchase-lightbox-content" onClick={(event) => event.stopPropagation()}>
+            <div className="purchase-lightbox-header">
+              <div>
+                <strong>{expandedTicker.ticker}</strong>
+                <p>{expandedTicker.group === 'top' ? 'Top performer detail' : 'Bottom performer detail'}</p>
+              </div>
+              <button type="button" className="purchase-expand-button" onClick={() => setExpandedTicker(null)}>
+                Close
+              </button>
+            </div>
+            <CandlestickChart
+              ticker={expandedTicker.ticker}
+              data={{ dates: [], open: [], high: [], low: [], close: [], volume: [] }}
+              markers={{ entries: expandedTicker.purchases.map((p) => ({ date: p.timestamp, price: p.price })), exits: [] }}
+              width={960}
+              height={560}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <style>{`
         .purchase-charts {
@@ -176,6 +235,28 @@ export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = (
           font-weight: 600;
           color: #0f172a;
         }
+        .purchase-card-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .purchase-chart-button {
+          width: 100%;
+          padding: 0;
+          border: none;
+          background: transparent;
+          cursor: zoom-in;
+        }
+        .purchase-expand-button {
+          border: none;
+          border-radius: 999px;
+          background: #e2e8f0;
+          color: #0f172a;
+          font-size: 11px;
+          font-weight: 700;
+          padding: 6px 10px;
+          cursor: pointer;
+        }
         .badge {
           font-size: 10px;
           padding: 2px 6px;
@@ -189,6 +270,45 @@ export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = (
         .badge.bottom {
           background: #fee2e2;
           color: #991b1b;
+        }
+        .purchase-lightbox {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.88);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+        .purchase-lightbox-content {
+          width: min(100%, 1040px);
+          max-height: 100%;
+          overflow: auto;
+          background: #0f172a;
+          border-radius: 18px;
+          padding: 16px;
+        }
+        .purchase-lightbox-header {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          color: #e2e8f0;
+          margin-bottom: 12px;
+        }
+        .purchase-lightbox-header p {
+          margin: 4px 0 0;
+          color: #94a3b8;
+          font-size: 13px;
+        }
+        @media (max-width: 768px) {
+          .purchase-grid {
+            grid-template-columns: 1fr;
+          }
+          .purchase-charts {
+            padding: 8px 0;
+          }
         }
       `}</style>
     </div>

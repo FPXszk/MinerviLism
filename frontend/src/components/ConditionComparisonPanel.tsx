@@ -27,6 +27,20 @@ export const ConditionComparisonPanel: React.FC<ConditionComparisonPanelProps> =
   selectedTimestamp,
 }) => {
   const { t } = useTranslation()
+  const [isMobile, setIsMobile] = React.useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 768 : false))
+  const [isExpanded, setIsExpanded] = React.useState(() => (typeof window !== 'undefined' ? window.innerWidth > 768 : true))
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768
+      setIsMobile(mobile)
+      setIsExpanded((current) => (mobile ? current : true))
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   const rows = backtests
     .map((backtest) => ({
       timestamp: backtest.timestamp,
@@ -53,7 +67,21 @@ export const ConditionComparisonPanel: React.FC<ConditionComparisonPanelProps> =
   ] as const
 
   return (
-    <div className="comparison-metric-grid">
+    <div className="comparison-root">
+      {isMobile ? (
+        <button
+          type="button"
+          className="comparison-toggle"
+          aria-expanded={isExpanded}
+          onClick={() => setIsExpanded((current) => !current)}
+        >
+          <span>{t('dashboard.conditionComparison', 'Condition Comparison')}</span>
+          <strong>{isExpanded ? t('dashboard.hideComparison', 'Hide') : t('dashboard.showComparison', 'Show')}</strong>
+        </button>
+      ) : null}
+
+      {isExpanded ? (
+      <div className="comparison-metric-grid">
       {metrics.map((metric) => (
         <section key={metric.key} className="comparison-metric-card">
           <h3>{metric.label}</h3>
@@ -78,8 +106,32 @@ export const ConditionComparisonPanel: React.FC<ConditionComparisonPanelProps> =
           </div>
         </section>
       ))}
+      </div>
+      ) : null}
 
       <style>{`
+        .comparison-root {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .comparison-toggle {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          width: 100%;
+          min-height: 48px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid #bfdbfe;
+          background: #eff6ff;
+          color: #0f172a;
+          font-weight: 700;
+          text-align: left;
+        }
+
         .comparison-metric-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -151,6 +203,12 @@ export const ConditionComparisonPanel: React.FC<ConditionComparisonPanelProps> =
 
         .comparison-bar--danger {
           background: linear-gradient(90deg, #fda4af, #ef4444);
+        }
+
+        @media (max-width: 768px) {
+          .comparison-metric-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </div>

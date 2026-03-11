@@ -236,3 +236,24 @@ def test_result_store_reads_run_manifest_metadata(tmp_path):
     assert backtests[0]['headline_metrics']['annual_return_pct'] == 0.18
     assert backtests[0]['headline_metrics']['information_ratio'] == 1.25
     assert backtests[0]['headline_metrics']['max_drawdown_pct'] == -0.08
+
+
+def test_result_store_can_filter_by_strategy_name(tmp_path):
+    from services.result_store import ResultStore
+
+    baseline_dir = _write_result_set(tmp_path, 'backtest_2025-01-01_to_2025-12-31_20251231-235959')
+    _write_manifest(baseline_dir, strategy_name='rule-based-stage2')
+
+    trader_dir = _write_result_set(tmp_path, 'backtest_2024-01-01_to_2024-12-31_20241231-000000')
+    _write_manifest(trader_dir, strategy_name='buffett-quality', run_label='buffett-annual')
+
+    store = ResultStore(tmp_path)
+
+    filtered = store.list_backtests(strategy_name='buffett-quality')
+    latest = store.get_latest_run(strategy_name='buffett-quality')
+
+    assert len(filtered) == 1
+    assert filtered[0]['strategy_name'] == 'buffett-quality'
+    assert filtered[0]['run_label'] == 'buffett-annual'
+    assert latest is not None
+    assert latest.strategy_name == 'buffett-quality'

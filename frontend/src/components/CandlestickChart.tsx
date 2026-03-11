@@ -561,10 +561,10 @@ export function CandlestickChart({
           <option value="ALL">All</option>
         </select>
 
-        {/* Year quick selector for convenient one-click backtests (2022-2025) */}
+        {/* Year quick selector for convenient one-click backtests (2020-2025) */}
         <label style={{ color: THEME.textColor, marginLeft: 6 }}>Year:</label>
         <div role="group" aria-label="Year selector" style={{ display: 'flex', gap: 6 }}>
-          {['2022', '2023', '2024', '2025'].map((y) => (
+          {['2020', '2021', '2022', '2023', '2024', '2025'].map((y) => (
             <button
               key={y}
               onClick={() => {

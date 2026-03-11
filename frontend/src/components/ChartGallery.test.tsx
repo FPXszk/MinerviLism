@@ -62,7 +62,7 @@ describe('ChartGallery', () => {
     await clickAndFlush(user, screen.getByAltText('top_AAA'))
     expect(screen.getAllByText('top AAA')).toHaveLength(2)
 
-    await clickAndFlush(user, screen.getByRole('button', { name: '×' }))
+    await clickAndFlush(user, screen.getByRole('button', { name: 'Close enlarged chart' }))
     expect(screen.getAllByText('top AAA')).toHaveLength(1)
   })
 })

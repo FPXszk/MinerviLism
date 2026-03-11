@@ -51,7 +51,7 @@ def _build_runner(tmp_path, monkeypatch):
 @pytest.mark.parametrize(
     ('payload', 'expected'),
     [
-        ({'command': 'backtest', 'start_date': '2026-01-01', 'end_date': '2026-01-31', 'tickers': 'AAA,BBB', 'no_charts': True}, ['main.py', '--mode', 'backtest', '--start', '2026-01-01', '--end', '2026-01-31', '--tickers', 'AAA,BBB', '--no-charts']),
+        ({'command': 'backtest', 'start_date': '2026-01-01', 'end_date': '2026-01-31', 'tickers': 'AAA,BBB', 'no_charts': True, 'strategy_name': 'buffett-quality'}, ['main.py', '--mode', 'backtest', '--start', '2026-01-01', '--end', '2026-01-31', '--tickers', 'AAA,BBB', '--strategy', 'buffett-quality', '--no-charts']),
         ({'command': 'stage2', 'with_fundamentals': True}, ['main.py', '--mode', 'stage2', '--with-fundamentals']),
         ({'command': 'full'}, ['main.py', '--mode', 'full']),
         ({'command': 'chart', 'ticker': 'AAA', 'start_date': '2026-01-01', 'end_date': '2026-01-31'}, ['main.py', '--mode', 'chart', '--ticker', 'AAA', '--start', '2026-01-01', '--end', '2026-01-31']),

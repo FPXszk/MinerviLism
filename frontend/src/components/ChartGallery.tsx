@@ -13,6 +13,20 @@ interface ChartGalleryProps {
 export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = false }) => {
   const { t } = useTranslation();
   const [selectedChart, setSelectedChart] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+
+  React.useEffect(() => {
+    if (!selectedChart) return undefined
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedChart(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedChart])
 
   if (loading) {
     return <div className="chart-gallery loading">{t('chartGallery.loadingCharts')}</div>;
@@ -30,6 +44,11 @@ export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = fa
     ([key]) => !key.startsWith('top_') && !key.startsWith('bottom_')
   );
 
+  const openChart = (key: string) => {
+    setSelectedChart(key);
+    setZoom(1);
+  };
+
   return (
     <div className="chart-gallery">
       {topCharts.length > 0 && (
@@ -37,15 +56,15 @@ export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = fa
           <h3>{t('chartGallery.topWinners')}</h3>
           <div className="chart-grid">
             {topCharts.map(([key, image]) => (
-              <div
+              <button
                 key={key}
+                type="button"
                 className="chart-item"
-                onClick={() => setSelectedChart(key)}
-                style={{ cursor: 'pointer' }}
+                onClick={() => openChart(key)}
               >
                 <img src={image!} alt={key} />
                 <div className="chart-label">{key.replace(/_/g, ' ')}</div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -56,15 +75,15 @@ export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = fa
           <h3>{t('chartGallery.bottomLosers')}</h3>
           <div className="chart-grid">
             {bottomCharts.map(([key, image]) => (
-              <div
+              <button
                 key={key}
+                type="button"
                 className="chart-item"
-                onClick={() => setSelectedChart(key)}
-                style={{ cursor: 'pointer' }}
+                onClick={() => openChart(key)}
               >
                 <img src={image!} alt={key} />
                 <div className="chart-label">{key.replace(/_/g, ' ')}</div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -75,28 +94,37 @@ export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = fa
           <h3>{t('chartGallery.otherCharts')}</h3>
           <div className="chart-grid">
             {otherCharts.map(([key, image]) => (
-              <div
+              <button
                 key={key}
+                type="button"
                 className="chart-item"
-                onClick={() => setSelectedChart(key)}
-                style={{ cursor: 'pointer' }}
+                onClick={() => openChart(key)}
               >
                 <img src={image!} alt={key} />
                 <div className="chart-label">{key.replace(/_/g, ' ')}</div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Modal for enlarged view */}
       {selectedChart && charts[selectedChart] && (
-        <div className="chart-modal" onClick={() => setSelectedChart(null)}>
-          <div className="modal-content">
-            <button className="close-button" onClick={() => setSelectedChart(null)}>
+        <div className="chart-modal" role="dialog" aria-modal="true" aria-label={selectedChart.replace(/_/g, ' ')} onClick={() => setSelectedChart(null)}>
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
+            <button className="close-button" aria-label={t('chartGallery.closeLightbox', 'Close enlarged chart')} onClick={() => setSelectedChart(null)}>
               ×
             </button>
-            <img src={charts[selectedChart]!} alt={selectedChart} />
+            <div className="modal-toolbar">
+              <button type="button" className="zoom-button" aria-label={t('chartGallery.zoomOut', 'Zoom out')} onClick={() => setZoom((current) => Math.max(1, current - 0.25))}>
+                −
+              </button>
+              <button type="button" className="zoom-button" aria-label={t('chartGallery.zoomIn', 'Zoom in')} onClick={() => setZoom((current) => Math.min(3, current + 0.25))}>
+                +
+              </button>
+            </div>
+            <div className="modal-image-stage">
+              <img src={charts[selectedChart]!} alt={selectedChart} style={{ transform: `scale(${zoom})` }} />
+            </div>
             <div className="modal-title">{selectedChart.replace(/_/g, ' ')}</div>
           </div>
         </div>
@@ -141,6 +169,8 @@ export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = fa
           border-radius: 8px;
           overflow: hidden;
           transition: transform 0.2s, box-shadow 0.2s;
+          padding: 0;
+          cursor: zoom-in;
         }
 
         .chart-item:hover {
@@ -183,6 +213,7 @@ export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = fa
           background: white;
           border-radius: 8px;
           overflow: auto;
+          padding-top: 52px;
         }
 
         .close-button {
@@ -204,10 +235,37 @@ export const ChartGallery: React.FC<ChartGalleryProps> = ({ charts, loading = fa
           background: rgba(0, 0, 0, 0.7);
         }
 
+        .modal-toolbar {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          display: flex;
+          gap: 8px;
+          z-index: 1001;
+        }
+
+        .zoom-button {
+          width: 40px;
+          height: 40px;
+          border: none;
+          border-radius: 8px;
+          background: rgba(15, 23, 42, 0.75);
+          color: #ffffff;
+          font-size: 22px;
+          cursor: pointer;
+        }
+
+        .modal-image-stage {
+          overflow: auto;
+          max-height: calc(90vh - 120px);
+          background: #0f172a;
+        }
+
         .modal-content img {
           width: 100%;
           height: auto;
           display: block;
+          transform-origin: top center;
         }
 
         .modal-title {

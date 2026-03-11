@@ -35,6 +35,7 @@ from analysis.stage_detector import StageDetector
 from analysis.vcp_detector import VCPDetector
 from backtest.fallback_manager import FallbackManager
 from backtest.entry_condition import EntryCondition
+from backtest.exit_condition import ExitCondition
 from backtest.data_preparation import prepare_backtest_data
 from backtest.result_artifacts import persist_trade_artifacts
 from backtest.trade_logger import TradeLogger
@@ -106,12 +107,16 @@ class BacktestEngine:
             min_trades_threshold=stage_config.get('min_trades_threshold', 1)
         )
 
-        # Initialize EntryCondition for daily entry checks
-        # NOTE: EntryCondition does NOT include rs_new_high
-        # Stage2 (with rs_new_high) is only used for universe selection
+        # Initialize strategy-aware entry/exit conditions for daily checks.
+        self.strategy_name = config.get('strategy', {}).get('name')
         self.entry_condition = EntryCondition(
             config=config,
-            mode=self.fallback_manager.get_current_mode()
+            mode=self.fallback_manager.get_current_mode(),
+            strategy_name=self.strategy_name,
+        )
+        self.exit_condition = ExitCondition(
+            config=config,
+            strategy_name=self.strategy_name,
         )
 
         # Backtest parameters
@@ -310,7 +315,7 @@ class BacktestEngine:
                     ticker_data = all_data[pos.ticker]
                     if date in ticker_data.index:
                         current_bar = ticker_data.loc[date]
-                        exit_signal, exit_reason = self._check_exit(pos, current_bar)
+                        exit_signal, exit_reason = self._check_exit(pos, current_bar, date)
 
                         if exit_signal:
                             pos.exit_date = date
@@ -439,12 +444,11 @@ class BacktestEngine:
                     #     f"{shares} shares, Stop: ${stop_price:.2f}"
                     # )
 
-                    # Simplified entry logic (Stage 2 with basic risk management)
+                    # Simplified entry logic (Stage 2 with strategy-aware risk management)
                     current_bar = data.loc[date]
                     entry_price = current_bar['close']
-
-                    # Simple 3% stop loss
-                    stop_price = entry_price * 0.97
+                    stop_price = self.exit_condition.initial_stop_price(entry_price, current_bar)
+                    target_price = self.exit_condition.initial_target_price(entry_price)
 
                     # Calculate position size
                     risk = entry_price - stop_price
@@ -469,7 +473,7 @@ class BacktestEngine:
                         entry_price=entry_price,
                         shares=shares,
                         stop_price=stop_price,
-                        target_price=entry_price * 1.25,
+                        target_price=target_price,
                         pivot=entry_price  # Simplified: use current price as pivot
                     )
                     positions.append(pos)
@@ -623,28 +627,9 @@ class BacktestEngine:
 
         logger.info("=" * 60)
 
-    def _check_exit(self, pos: Position, current_bar: pd.Series) -> tuple:
-        """
-        Check exit conditions.
-
-        Returns:
-            (exit_signal: bool, exit_reason: str)
-        """
-        close = current_bar['close']
-
-        # Stop loss
-        if close <= pos.stop_price:
-            return True, 'stop_loss'
-
-        # 50-day MA break
-        if 'sma_50' in current_bar and close < current_bar['sma_50']:
-            return True, 'ma50_break'
-
-        # Target reached
-        if close >= pos.target_price:
-            return True, 'target_reached'
-
-        return False, ''
+    def _check_exit(self, pos: Position, current_bar: pd.Series, current_date: pd.Timestamp) -> tuple:
+        """Check strategy-aware exit conditions."""
+        return self.exit_condition.evaluate(pos, current_bar, current_date)
 
     def _calculate_results(
         self,

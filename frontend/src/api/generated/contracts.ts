@@ -115,6 +115,7 @@ export type JobCreateRequest = {
   tickers?: string | null;
   no_charts?: boolean;
   ticker?: string | null;
+  strategy_name?: string | null;
   with_fundamentals?: boolean;
   min_market_cap?: number | null;
   max_tickers?: number | null;

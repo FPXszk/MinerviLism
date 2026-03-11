@@ -27,8 +27,13 @@ export type {
 /**
  * Fetch latest backtest results
  */
-export async function fetchLatestBacktest(): Promise<BacktestResults> {
-  const response = await fetch(buildApiUrl('/backtest/latest'));
+export async function fetchLatestBacktest(strategyName?: string): Promise<BacktestResults> {
+  const params = new URLSearchParams()
+  if (strategyName) {
+    params.set('strategy_name', strategyName)
+  }
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  const response = await fetch(buildApiUrl(`/backtest/latest${suffix}`));
   if (!response.ok) {
     throw new Error(`Failed to fetch latest backtest: ${response.statusText}`);
   }
@@ -49,8 +54,26 @@ export async function fetchBacktestResults(timestamp: string): Promise<BacktestR
 /**
  * List all available backtests
  */
-export async function listAllBacktests(): Promise<BacktestMetadata[]> {
-  const response = await fetch(buildApiUrl('/backtest/list'));
+export async function fetchBacktestByRange(selector: string, strategyName?: string): Promise<BacktestResults> {
+  const params = new URLSearchParams()
+  params.set('range', selector)
+  if (strategyName) {
+    params.set('strategy_name', strategyName)
+  }
+  const response = await fetch(buildApiUrl(`/backtest/latest?${params.toString()}`))
+  if (!response.ok) {
+    throw new Error(`Failed to fetch backtest range: ${response.statusText}`)
+  }
+  return response.json()
+}
+
+export async function listAllBacktests(strategyName?: string): Promise<BacktestMetadata[]> {
+  const params = new URLSearchParams()
+  if (strategyName) {
+    params.set('strategy_name', strategyName)
+  }
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  const response = await fetch(buildApiUrl(`/backtest/list${suffix}`));
   if (!response.ok) {
     throw new Error(`Failed to list backtests: ${response.statusText}`);
   }

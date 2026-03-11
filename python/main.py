@@ -3,6 +3,7 @@ Stock Screening System - Main Entry Point
 Based on Minervini's Stage Theory
 (VCP Pattern detection temporarily disabled for validation)
 """
+import copy
 import yaml
 import pandas as pd
 from pathlib import Path
@@ -51,6 +52,31 @@ def load_tickers(tickers_path: str = "config/tickers.csv") -> list:
     return df['ticker'].tolist()
 
 
+def _resolve_strategy_profile(config: dict, strategy_name: str | None) -> dict:
+    selected_name = strategy_name or config.get('experiment', {}).get('strategy_name', 'rule-based-stage2')
+    profiles = config.get('strategy_profiles', {})
+    profile = profiles.get(selected_name)
+    if profile is None:
+        available = ', '.join(sorted(profiles.keys()))
+        raise ValueError(f"Unknown strategy: {selected_name}. Available strategies: {available}")
+
+    resolved = copy.deepcopy(config)
+    resolved['strategy'] = {
+        **resolved.get('strategy', {}),
+        **profile,
+        'name': selected_name,
+    }
+
+    experiment = dict(resolved.get('experiment', {}))
+    experiment['strategy_name'] = selected_name
+    experiment['name'] = profile.get('experiment_name', experiment.get('name', selected_name))
+    experiment['rule_profile'] = profile.get('rule_profile', experiment.get('rule_profile', 'strict-auto-fallback'))
+    experiment['tags'] = list(dict.fromkeys([*experiment.get('tags', []), *profile.get('tags', [])]))
+    resolved['experiment'] = experiment
+    return resolved
+
+
+
 def _get_experiment_settings(config: dict) -> dict:
     experiment = config.get('experiment', {})
     return {
@@ -63,7 +89,7 @@ def _get_experiment_settings(config: dict) -> dict:
 
 def _extract_parameter_snapshot(config: dict, args) -> dict:
     sections = {}
-    for key in ('benchmark', 'stage', 'entry', 'exit', 'risk', 'backtest', 'experiment'):
+    for key in ('benchmark', 'stage', 'entry', 'exit', 'risk', 'backtest', 'experiment', 'strategy'):
         if key in config:
             sections[key] = config[key]
     sections['cli'] = {
@@ -73,6 +99,7 @@ def _extract_parameter_snapshot(config: dict, args) -> dict:
         'no_charts': args.no_charts,
         'use_benchmark': not args.no_benchmark,
         'run_label': getattr(args, 'run_label', None),
+        'strategy': getattr(args, 'strategy', None),
     }
     return sections
 
@@ -200,6 +227,7 @@ def run_backtest_mode(config: dict, tickers: list, args):
     logger.info(f"Period: {start_date} to {end_date}")
     logger.info(f"Tickers: {len(tickers)}")
     logger.info(f"Benchmark: {'Enabled' if use_benchmark else 'Disabled'}")
+    logger.info(f"Strategy: {config.get('experiment', {}).get('strategy_name', 'rule-based-stage2')}")
 
     # Initialize and run backtest engine
     engine = BacktestEngine(config, use_benchmark=use_benchmark, output_dir=output_dir)
@@ -615,6 +643,11 @@ def main():
         type=str,
         help='Optional label recorded in the backtest manifest for comparison'
     )
+    parser.add_argument(
+        '--strategy',
+        type=str,
+        help='Strategy profile to use for backtest runs'
+    )
 
     # Benchmark options (mutually exclusive)
     benchmark_group = parser.add_mutually_exclusive_group()
@@ -636,6 +669,10 @@ def main():
 
     # Load configuration
     config = load_config()
+    try:
+        config = _resolve_strategy_profile(config, args.strategy)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     # Setup logger
     log_level = 'DEBUG' if args.verbose else config['output']['log_level']

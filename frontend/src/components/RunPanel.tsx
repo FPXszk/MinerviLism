@@ -18,6 +18,20 @@ const COMMAND_OPTIONS = [
   { value: 'update_tickers', labelKey: 'runPanel.options.updateTickers' },
 ] as const;
 
+const STRATEGY_OPTIONS = [
+  { value: 'rule-based-stage2', label: 'Baseline Stage2' },
+  { value: 'buffett-quality', label: 'Warren Buffett' },
+  { value: 'soros-breakout', label: 'George Soros' },
+  { value: 'lynch-growth', label: 'Peter Lynch' },
+  { value: 'minervini-trend', label: 'Mark Minervini' },
+  { value: 'dalio-balance', label: 'Ray Dalio' },
+] as const;
+
+const YEAR_PRESETS = [
+  { label: '2020', start: '2020-01-01', end: '2020-12-31' },
+  { label: '2021', start: '2021-01-01', end: '2021-12-31' },
+] as const;
+
 export const RunPanel: React.FC<RunPanelProps> = ({
   onRun,
   onCancel,
@@ -33,6 +47,7 @@ export const RunPanel: React.FC<RunPanelProps> = ({
   const [singleTicker, setSingleTicker] = useState('AAPL');
   const [noCharts, setNoCharts] = useState(false);
   const [withFundamentals, setWithFundamentals] = useState(false);
+  const [strategyName, setStrategyName] = useState<JobCreateRequest['strategy_name']>('rule-based-stage2');
   const [minMarketCap, setMinMarketCap] = useState('5000000000');
   const [maxTickers, setMaxTickers] = useState('');
   const [timeoutSeconds, setTimeoutSeconds] = useState('7200');
@@ -75,6 +90,7 @@ export const RunPanel: React.FC<RunPanelProps> = ({
     if (command === 'backtest') {
       req.start_date = startDate;
       req.end_date = endDate;
+      req.strategy_name = strategyName;
       if (tickers.trim()) {
         req.tickers = tickers.trim();
       }
@@ -129,8 +145,8 @@ export const RunPanel: React.FC<RunPanelProps> = ({
       </div>
 
       <div className="run-grid">
-        <label>
-          {t('runPanel.command')}
+        <label className="run-field">
+          <span>{t('runPanel.command')}</span>
           <select
             value={command}
             onChange={(e) => setCommand(e.target.value as JobCreateRequest['command'])}
@@ -144,10 +160,27 @@ export const RunPanel: React.FC<RunPanelProps> = ({
           </select>
         </label>
 
+        {command === 'backtest' && (
+          <label className="run-field run-field--highlight">
+            <span>{t('runPanel.strategy', 'Strategy')}</span>
+            <select
+              value={strategyName ?? 'rule-based-stage2'}
+              onChange={(e) => setStrategyName(e.target.value)}
+              disabled={isRunning || submitting}
+            >
+              {STRATEGY_OPTIONS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         {(command === 'backtest' || command === 'chart') && (
           <>
-            <label>
-              {t('runPanel.startDate')}
+            <label className="run-field run-field--highlight">
+              <span>{t('runPanel.startDate')}</span>
               <input
                 type="date"
                 value={startDate}
@@ -155,8 +188,8 @@ export const RunPanel: React.FC<RunPanelProps> = ({
                 disabled={isRunning || submitting}
               />
             </label>
-            <label>
-              {t('runPanel.endDate')}
+            <label className="run-field run-field--highlight">
+              <span>{t('runPanel.endDate')}</span>
               <input
                 type="date"
                 value={endDate}
@@ -164,13 +197,34 @@ export const RunPanel: React.FC<RunPanelProps> = ({
                 disabled={isRunning || submitting}
               />
             </label>
+            {command === 'backtest' && (
+              <div className="run-preset-group" aria-label={t('runPanel.periodPresets', 'Period presets')}>
+                <span className="run-preset-label">{t('runPanel.periodPresets', 'Period presets')}</span>
+                <div className="run-preset-buttons">
+                  {YEAR_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      className="button-secondary run-preset-button"
+                      onClick={() => {
+                        setStartDate(preset.start)
+                        setEndDate(preset.end)
+                      }}
+                      disabled={isRunning || submitting}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
 
         {command === 'backtest' && (
           <>
-            <label>
-              {t('runPanel.tickersOptional')}
+            <label className="run-field run-field--highlight run-field--full">
+              <span>{t('runPanel.tickersOptional')}</span>
               <input
                 type="text"
                 value={tickers}
@@ -204,8 +258,8 @@ export const RunPanel: React.FC<RunPanelProps> = ({
         )}
 
         {command === 'chart' && (
-          <label>
-            {t('runPanel.ticker')}
+          <label className="run-field run-field--highlight">
+            <span>{t('runPanel.ticker')}</span>
             <input
               type="text"
               value={singleTicker}
@@ -218,8 +272,8 @@ export const RunPanel: React.FC<RunPanelProps> = ({
 
         {command === 'update_tickers' && (
           <>
-            <label>
-              {t('runPanel.minMarketCap')}
+            <label className="run-field run-field--highlight">
+              <span>{t('runPanel.minMarketCap')}</span>
               <input
                 type="number"
                 value={minMarketCap}
@@ -227,8 +281,8 @@ export const RunPanel: React.FC<RunPanelProps> = ({
                 disabled={isRunning || submitting}
               />
             </label>
-            <label>
-              {t('runPanel.maxTickersOptional')}
+            <label className="run-field run-field--highlight">
+              <span>{t('runPanel.maxTickersOptional')}</span>
               <input
                 type="number"
                 value={maxTickers}
@@ -239,8 +293,8 @@ export const RunPanel: React.FC<RunPanelProps> = ({
           </>
         )}
 
-        <label>
-          {t('runPanel.timeoutSeconds')}
+        <label className="run-field run-field--highlight">
+          <span>{t('runPanel.timeoutSeconds')}</span>
           <input
             type="number"
             min={30}
@@ -275,6 +329,172 @@ export const RunPanel: React.FC<RunPanelProps> = ({
         <h4>{t('runPanel.liveLogs')}</h4>
         <pre>{logs.length ? logs.join('\n') : t('runPanel.noLogsYet')}</pre>
       </div>
+
+      <style>{`
+        .run-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .run-panel-header {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: flex-start;
+        }
+
+        .status-line {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          color: #475569;
+          font-size: 13px;
+        }
+
+        .status-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 999px;
+        }
+
+        .run-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .run-field {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding: 12px;
+          border-radius: 14px;
+          border: 1px solid #dbe4f0;
+          background: #f8fafc;
+          font-size: 14px;
+          font-weight: 600;
+          color: #0f172a;
+        }
+
+        .run-field--highlight {
+          border-color: #93c5fd;
+          box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12);
+        }
+
+        .run-field--full {
+          grid-column: 1 / -1;
+        }
+
+        .run-field input,
+        .run-field select {
+          min-height: 44px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: 1px solid #cbd5e1;
+          background: #ffffff;
+          font-size: 14px;
+        }
+
+        .run-preset-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding: 12px;
+          border-radius: 14px;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+        }
+
+        .run-preset-label {
+          font-size: 13px;
+          font-weight: 700;
+          color: #1d4ed8;
+        }
+
+        .run-preset-buttons {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .run-preset-button {
+          min-height: 40px;
+        }
+
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 44px;
+          padding: 12px;
+          border-radius: 14px;
+          border: 1px solid #dbe4f0;
+          background: #f8fafc;
+          color: #0f172a;
+          font-weight: 600;
+        }
+
+        .checkbox-label input {
+          width: 18px;
+          height: 18px;
+        }
+
+        .run-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .button-primary,
+        .button-secondary {
+          min-height: 44px;
+          padding: 10px 16px;
+          border-radius: 999px;
+          border: none;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .button-secondary {
+          background: #e2e8f0;
+          color: #1e293b;
+        }
+
+        .job-meta,
+        .log-panel {
+          padding: 14px;
+          border-radius: 14px;
+          background: #0f172a;
+          color: #e2e8f0;
+        }
+
+        .job-meta {
+          display: grid;
+          gap: 8px;
+        }
+
+        .run-error {
+          color: #fecaca;
+        }
+
+        .log-panel pre {
+          margin: 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        @media (max-width: 768px) {
+          .run-panel-mobile .run-panel-header,
+          .run-panel-header {
+            flex-direction: column;
+          }
+
+          .run-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </section>
   );
 };

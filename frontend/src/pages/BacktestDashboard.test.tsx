@@ -10,6 +10,7 @@ const {
   listAllBacktestsMock,
   fetchBacktestResultsMock,
   fetchLatestBacktestMock,
+  fetchBacktestByRangeMock,
   createJobMock,
   getJobMock,
   getJobLogsMock,
@@ -18,6 +19,7 @@ const {
   listAllBacktestsMock: vi.fn(),
   fetchBacktestResultsMock: vi.fn(),
   fetchLatestBacktestMock: vi.fn(),
+  fetchBacktestByRangeMock: vi.fn(),
   createJobMock: vi.fn(),
   getJobMock: vi.fn(),
   getJobLogsMock: vi.fn(),
@@ -28,6 +30,7 @@ vi.mock('../api/backtest', () => ({
   listAllBacktests: listAllBacktestsMock,
   fetchBacktestResults: fetchBacktestResultsMock,
   fetchLatestBacktest: fetchLatestBacktestMock,
+  fetchBacktestByRange: fetchBacktestByRangeMock,
 }))
 
 vi.mock('../api/jobs', () => ({
@@ -120,6 +123,9 @@ const sampleBacktests = [
     dir_name: 'run-2025',
     is_pinned: true,
     available_runs: 3,
+    run_label: 'baseline-run',
+    strategy_name: 'rule-based-stage2',
+    rule_profile: 'strict-auto-fallback',
   },
   {
     timestamp: 'backtest_2026-01-01_to_2026-01-31_20260131-000000',
@@ -215,6 +221,7 @@ describe('BacktestDashboard', () => {
     listAllBacktestsMock.mockReset()
     fetchBacktestResultsMock.mockReset()
     fetchLatestBacktestMock.mockReset()
+    fetchBacktestByRangeMock.mockReset()
     createJobMock.mockReset()
     getJobMock.mockReset()
     getJobLogsMock.mockReset()
@@ -226,6 +233,10 @@ describe('BacktestDashboard', () => {
       ...sampleResults,
       timestamp: 'backtest_2026-02-01_to_2026-02-28_20260228-000000',
     })
+    fetchBacktestByRangeMock.mockImplementation(async (range: string) => ({
+      ...sampleResults,
+      timestamp: `pinned-${range}`,
+    }))
     createJobMock.mockResolvedValue(runningJob)
     getJobMock.mockResolvedValue({ ...runningJob, status: 'succeeded' })
     getJobLogsMock.mockResolvedValue({ job_id: 'job-1', status: 'running', lines: ['line-a', 'line-b'] })
@@ -254,6 +265,9 @@ describe('BacktestDashboard', () => {
     expect(screen.getByText('Pinned')).toBeInTheDocument()
     expect(screen.getByText(/Pinned annual results stay visible by default\./)).toBeInTheDocument()
     expect(screen.getByText('3 runs')).toBeInTheDocument()
+    expect(screen.getByText('Selected run')).toBeInTheDocument()
+    expect(screen.getAllByText('baseline-run').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('strict-auto-fallback').length).toBeGreaterThan(0)
     expect(await screen.findByTestId('run-panel')).toBeInTheDocument()
     expect(screen.getByTestId('backtest-status')).toHaveTextContent('idle:0')
   })

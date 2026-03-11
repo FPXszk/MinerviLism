@@ -1,46 +1,22 @@
 """
-State Conditions: Historical event conditions for backtesting
+State Conditions: Historical event conditions for backtesting.
 
-This module defines conditions that represent historical states rather than
-instantaneous point-in-time conditions. The key example is rs_new_high,
-which should be treated as "happened within last N days" rather than
-"is true right now".
-
-Key Concepts:
-1. State conditions are checked against a window of historical data
-2. They are used for universe filtering, NOT daily entry decisions
-3. They provide context about a stock's recent behavior
+These helpers describe recent state rather than point-in-time checks so that
+strategy-specific entry rules can stay readable and testable.
 """
-import pandas as pd
+from __future__ import annotations
+
 from typing import Optional
+
+import pandas as pd
 from loguru import logger
 
 
 def has_recent_rs_new_high(
     rs_line: pd.Series,
     window: int = 20,
-    threshold: float = 0.95
+    threshold: float = 0.95,
 ) -> bool:
-    """
-    Check if RS line made a new high within the last N days.
-
-    This is a "state condition" - it checks for a recent historical event,
-    not an instantaneous condition. This makes it more suitable for
-    filtering rather than daily entry decisions.
-
-    Args:
-        rs_line: RS Line time series
-        window: Number of days to look back for new high
-        threshold: Minimum ratio to 52-week high (default 0.95 = 95%)
-
-    Returns:
-        True if RS line made a new high (>= threshold of 52w high) within window
-
-    Example:
-        If rs_line peaked 10 days ago at 95% of its 52-week high,
-        and window=20, this returns True.
-        If the peak was 30 days ago, this returns False.
-    """
     if rs_line is None or len(rs_line) < 252:
         logger.debug("RS line has insufficient data for new high check")
         return False
@@ -50,35 +26,16 @@ def has_recent_rs_new_high(
         logger.debug(f"RS line has only {len(rs_clean)} valid data points")
         return False
 
-    # Get 52-week high of RS line
     rs_52w_high = rs_clean.tail(252).max()
-
-    # Check if any day in the window reached near the 52w high
     target_level = rs_52w_high * threshold
     recent_data = rs_clean.tail(window)
-
-    # Check if any value in window meets the threshold
-    for value in recent_data:
-        if value >= target_level:
-            return True
-
-    return False
+    return bool((recent_data >= target_level).any())
 
 
 def get_rs_new_high_date(
     rs_line: pd.Series,
-    threshold: float = 0.95
+    threshold: float = 0.95,
 ) -> Optional[pd.Timestamp]:
-    """
-    Get the most recent date when RS line made a new high.
-
-    Args:
-        rs_line: RS Line time series
-        threshold: Minimum ratio to 52-week high
-
-    Returns:
-        Date of most recent new high, or None if never
-    """
     if rs_line is None or len(rs_line) < 252:
         return None
 
@@ -88,39 +45,70 @@ def get_rs_new_high_date(
 
     rs_52w_high = rs_clean.tail(252).max()
     target_level = rs_52w_high * threshold
-
-    # Find dates where RS >= target
     high_dates = rs_clean[rs_clean >= target_level].index
-
     if len(high_dates) == 0:
         return None
-
     return high_dates[-1]
 
 
 def days_since_rs_new_high(
     rs_line: pd.Series,
-    threshold: float = 0.95
+    threshold: float = 0.95,
 ) -> Optional[int]:
-    """
-    Calculate days since RS line made a new high.
-
-    Args:
-        rs_line: RS Line time series
-        threshold: Minimum ratio to 52-week high
-
-    Returns:
-        Number of trading days since new high, or None if never
-    """
     high_date = get_rs_new_high_date(rs_line, threshold)
-
     if high_date is None:
         return None
 
     rs_clean = rs_line.dropna()
     current_date = rs_clean.index[-1]
-
-    # Count trading days between high and current
     days = len(rs_clean[(rs_clean.index > high_date) & (rs_clean.index <= current_date)])
-
     return days
+
+
+def is_near_52w_high(data: pd.DataFrame, threshold: float = 0.85) -> bool:
+    if data is None or data.empty or len(data) < 20:
+        return False
+    high_52w = data['high'].tail(min(len(data), 252)).max()
+    latest_close = data['close'].iloc[-1]
+    if pd.isna(high_52w) or pd.isna(latest_close) or high_52w <= 0:
+        return False
+    return bool(latest_close >= high_52w * threshold)
+
+
+def has_recent_price_breakout(data: pd.DataFrame, lookback: int = 20, breakout_buffer: float = 0.0) -> bool:
+    if data is None or data.empty or len(data) <= lookback:
+        return False
+    reference = data['high'].iloc[-(lookback + 1):-1].max()
+    latest_close = data['close'].iloc[-1]
+    if pd.isna(reference) or pd.isna(latest_close):
+        return False
+    return bool(latest_close >= reference * (1 + breakout_buffer))
+
+
+def is_sma_rising(data: pd.DataFrame, column: str = 'sma_200', window: int = 20) -> bool:
+    if data is None or data.empty or column not in data or len(data) <= window:
+        return False
+    latest = data[column].iloc[-1]
+    prior = data[column].iloc[-(window + 1)]
+    if pd.isna(latest) or pd.isna(prior):
+        return False
+    return bool(latest > prior)
+
+
+def is_low_volatility(data: pd.DataFrame, max_value: float = 0.03, column: str = 'volatility_20') -> bool:
+    if data is None or data.empty or column not in data:
+        return False
+    latest = data[column].iloc[-1]
+    if pd.isna(latest):
+        return False
+    return bool(latest <= max_value)
+
+
+def is_near_ema(data: pd.DataFrame, tolerance: float = 0.04, column: str = 'ema_21') -> bool:
+    if data is None or data.empty or column not in data:
+        return False
+    latest_close = data['close'].iloc[-1]
+    ema = data[column].iloc[-1]
+    if pd.isna(latest_close) or pd.isna(ema) or ema == 0:
+        return False
+    return bool(abs(latest_close - ema) / ema <= tolerance)

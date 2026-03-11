@@ -187,14 +187,15 @@ def get_tickers():
 
 
 @router.get("/list", response_model=BacktestListResponse)
-def list_backtests():
+def list_backtests(strategy_name: Optional[str] = None):
     """List all available backtest results."""
-    backtests = list_available_backtests(DEFAULT_OUTPUT_DIR)
+    store = ResultStore(DEFAULT_OUTPUT_DIR)
+    backtests = store.list_backtests(strategy_name=strategy_name)
     return BacktestListResponse(backtests=[BacktestMetadata(**backtest) for backtest in backtests])
 
 
 @router.get("/latest", response_model=BacktestResults)
-def get_latest_results(range: Optional[str] = None) -> BacktestResults:
+def get_latest_results(range: Optional[str] = None, strategy_name: Optional[str] = None) -> BacktestResults:
     """Get the latest backtest results or a range-specific backtest.
 
     Query parameters:
@@ -202,10 +203,22 @@ def get_latest_results(range: Optional[str] = None) -> BacktestResults:
       directory name, exact timestamp, exact period string ("YYYY-MM-DD to
       YYYY-MM-DD"), or a four-digit year prefix. Special value 'ALL' returns
       the latest run.
+    - strategy_name: optional strategy filter applied before selecting the run.
     """
     store = _get_store_or_404(DEFAULT_OUTPUT_DIR)
     try:
-        chosen = _resolve_requested_run(store, range)
+        if strategy_name is None:
+            chosen = store.get_run_by_range(range)
+        else:
+            chosen = store.get_run_by_range(range, strategy_name=strategy_name)
+        if chosen is None:
+            normalized = (range or "").strip() or "ALL"
+            if strategy_name:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No backtest results found for selector: {normalized} and strategy: {strategy_name}",
+                )
+            raise HTTPException(status_code=404, detail=f"No backtest results found for selector: {normalized}")
         return _get_backtest_results_by_dir(str(chosen.result_dir), chosen.dir_name, run=chosen)
     except HTTPException:
         raise

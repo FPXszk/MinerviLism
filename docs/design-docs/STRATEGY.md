@@ -110,6 +110,19 @@ Strictモードでトレードが0件の場合に自動発動。
 
 これらは `python/config/params.yaml` を正本とし、各 run は `run_manifest.json` に snapshot を保存する。
 
+## Strategy profile 運用
+
+- 既定値は `rule-based-stage2`。
+- 追加の strategy profile は公開情報の特徴量を抽出した `trader-inspired` 方式で実装する。
+- 現在の profile:
+  - `buffett-quality`
+  - `soros-breakout`
+  - `lynch-growth`
+  - `minervini-trend`
+  - `dalio-balance`
+- profile 選択は `python/main.py --strategy <strategy_name>` で行い、選択内容は `run_manifest.json` の `strategy_name` / `rule_profile` に保存する。
+- frontend の `/dashboard/strategies` はこの metadata を参照して run を切り替える。
+
 ---
 
 # 出力仕様

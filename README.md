@@ -204,6 +204,7 @@ npm --prefix frontend run dev -- --host 0.0.0.0 --port 3000 --strictPort
 - `/home` - ホーム画面の別ルート
 - `/dashboard` - KPI 概要、条件比較、実験一覧テーブル、ジョブ状態を表示するダッシュボード
 - `/dashboard/analysis` - エクイティカーブ、ドローダウン、シグナルイベント、チャートギャラリー、トレード一覧を表示する詳細画面
+- `/dashboard/strategies` - 著名トレーダーに着想を得た strategy profile を選び、概要と対応 run を比較する画面
 - `/chart/:ticker` - 個別銘柄チャート
 
 localhost 可視化で使うデータ I/O 契約:

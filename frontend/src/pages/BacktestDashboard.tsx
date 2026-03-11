@@ -14,9 +14,35 @@ export function useBacktestDashboardContext() {
   return useOutletContext<BacktestDashboardContextValue>()
 }
 
+function formatRunPeriodFromTimestamp(timestamp?: string | null) {
+  if (!timestamp) return null
+  const normalized = timestamp.replace('backtest_', '')
+  const [startDate, remainder] = normalized.split('_to_')
+  if (!startDate || !remainder) return null
+  const [endDate] = remainder.split('_')
+  if (!endDate) return null
+  return `${startDate} to ${endDate}`
+}
+
 export const BacktestDashboard: React.FC = () => {
   const { t } = useTranslation()
   const dashboard = useBacktestDashboardState()
+  const selectedBacktest = dashboard.backtests.find((backtest) => backtest.timestamp === dashboard.selectedTimestamp)
+  const activeRunLabel =
+    selectedBacktest?.run_label
+    ?? selectedBacktest?.experiment_name
+    ?? dashboard.results?.run_metadata?.run_label
+    ?? dashboard.results?.timestamp
+    ?? null
+  const activePeriod = selectedBacktest?.period ?? formatRunPeriodFromTimestamp(dashboard.results?.timestamp) ?? null
+  const activeStrategy =
+    selectedBacktest?.strategy_name
+    ?? dashboard.results?.run_metadata?.strategy_name
+    ?? null
+  const activeRuleProfile =
+    selectedBacktest?.rule_profile
+    ?? dashboard.results?.run_metadata?.rule_profile
+    ?? null
 
   return (
     <div className="backtest-dashboard">
@@ -37,7 +63,31 @@ export const BacktestDashboard: React.FC = () => {
         <NavLink to="/dashboard/analysis" className={({ isActive }) => `route-tab ${isActive ? 'active' : ''}`}>
           {t('dashboard.analysisRoute', 'Analysis & Results')}
         </NavLink>
+        <NavLink to="/dashboard/strategies" className={({ isActive }) => `route-tab ${isActive ? 'active' : ''}`}>
+          {t('dashboard.traderStrategiesRoute', 'Trader Strategies')}
+        </NavLink>
       </nav>
+
+      {activeRunLabel || activePeriod || activeStrategy ? (
+        <section className="dashboard-active-run" aria-label={t('dashboard.selectedRunTitle', 'Selected run summary')}>
+          <div className="dashboard-active-run__item">
+            <span>{t('dashboard.selectedRunTitle', 'Selected run')}</span>
+            <strong>{activeRunLabel ?? t('dashboard.selectBacktest')}</strong>
+          </div>
+          <div className="dashboard-active-run__item">
+            <span>{t('dashboard.selectedPeriodLabel', 'Period')}</span>
+            <strong>{activePeriod ?? '-'}</strong>
+          </div>
+          <div className="dashboard-active-run__item">
+            <span>{t('dashboard.selectedStrategyLabel', 'Strategy')}</span>
+            <strong>{activeStrategy ?? '-'}</strong>
+          </div>
+          <div className="dashboard-active-run__item">
+            <span>{t('dashboard.selectedProfileLabel', 'Profile')}</span>
+            <strong>{activeRuleProfile ?? '-'}</strong>
+          </div>
+        </section>
+      ) : null}
 
       {dashboard.error && (
         <div className="dashboard-notification">
@@ -110,6 +160,41 @@ export const BacktestDashboard: React.FC = () => {
           padding: 12px 20px 0;
         }
 
+        .dashboard-active-run {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+          padding: 12px 20px 0;
+          background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(248, 250, 252, 0.92) 100%);
+          backdrop-filter: blur(8px);
+        }
+
+        .dashboard-active-run__item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid #dbe4f0;
+          background: #ffffff;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .dashboard-active-run__item span {
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .dashboard-active-run__item strong {
+          color: #0f172a;
+          font-size: 14px;
+          word-break: break-word;
+        }
+
         .dashboard-shell {
           flex: 1;
           padding: 16px 20px 24px;
@@ -141,6 +226,11 @@ export const BacktestDashboard: React.FC = () => {
           .dashboard-route-nav {
             padding: 12px 20px 0;
             flex-direction: column;
+          }
+
+          .dashboard-active-run {
+            grid-template-columns: 1fr;
+            padding: 12px 12px 0;
           }
 
           .route-tab {

@@ -31,6 +31,7 @@ class TestJobsApi:
                     "command": "backtest",
                     "start_date": "2024-01-01",
                     "end_date": "2024-12-31",
+                    "strategy_name": "buffett-quality",
                 },
             )
 

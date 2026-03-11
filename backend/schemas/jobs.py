@@ -13,6 +13,7 @@ class JobCreateRequest(BaseModel):
     tickers: Optional[str] = None
     no_charts: bool = False
     ticker: Optional[str] = None
+    strategy_name: Optional[str] = None
     with_fundamentals: bool = False
     min_market_cap: Optional[int] = None
     max_tickers: Optional[int] = None

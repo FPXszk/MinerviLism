@@ -5,7 +5,7 @@ import sys
 import threading
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from loguru import logger
 
@@ -38,6 +38,8 @@ class JobRunner:
                 argv.extend(["--end", payload["end_date"]])
             if payload.get("tickers"):
                 argv.extend(["--tickers", payload["tickers"]])
+            if payload.get("strategy_name"):
+                argv.extend(["--strategy", payload["strategy_name"]])
             if payload.get("no_charts"):
                 argv.append("--no-charts")
             return argv

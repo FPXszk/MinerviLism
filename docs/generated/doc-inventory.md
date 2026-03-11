@@ -35,6 +35,7 @@
     - [foundation-improvements.md](../exec-plans/completed/foundation-improvements.md) — foundation-improvements — - タイトル: 基盤改善一式の実装
     - [improvement-round-1.md](../exec-plans/completed/improvement-round-1.md) — 変更・削除・作成するファイル — - frontend/src/pages/BacktestDashboard.test.tsx ほか frontend テスト群
     - [improvement-round-2.md](../exec-plans/completed/improvement-round-2.md) — 変更・削除・作成するファイル — - frontend/src/pages/BacktestDashboard.tsx と関連テスト
+    - [mobile-ui-famous-traders-plan.md](../exec-plans/completed/mobile-ui-famous-traders-plan.md) — 実装計画: モバイルUI改善と著名トレーダー戦略拡張 — - フェーズ: localhost 可視化改善 Phase 2
     - [qlib-inspired-architecture.md](../exec-plans/completed/qlib-inspired-architecture.md) — 実装計画: Qlib inspired architecture adaptation — - タイトル: Qlib inspired architecture adaptation
     - [working-memory-governance.md](../exec-plans/completed/working-memory-governance.md) — 実装計画: 長期記憶・文脈維持ルールの文書整理 — - タイトル: 長期記憶・文脈維持ルールの文書整理
 - `docs/product-specs/`
@@ -47,6 +48,8 @@
     - [index.md](../working-memory/session-logs/index.md) — session-logs — 目的
     - [2026-03-09T16-11-18Z-session-summary.md](../working-memory/session-logs/2026-03-09T16-11-18Z-session-summary.md) — セッションログ: ダッシュボード改善バッチ1 とドキュメント再編 — 保存日時: 2026-03-09T16:11:18Z
     - [2026-03-10T02-02-49Z-session-summary.md](../working-memory/session-logs/2026-03-10T02-02-49Z-session-summary.md) — セッションログ: Qlib inspired architecture adaptation — 保存日時: 2026-03-10T02:02:49Z
+    - [2026-03-11T08-07-14Z-session-summary.md](../working-memory/session-logs/2026-03-11T08-07-14Z-session-summary.md) — セッションログ: mobile UX and trader strategy expansion — 保存日時: 2026-03-11T08:07:14Z
+    - [2026-03-11T18-15-00Z-session-summary.md](../working-memory/session-logs/2026-03-11T18-15-00Z-session-summary.md) — セッションログ: mobile UX completion and validation — 保存日時: 2026-03-11T18:15:00Z
   - `docs/working-memory/summaries-lv1/`
     - [index.md](../working-memory/summaries-lv1/index.md) — summaries-lv1 — 目的
   - `docs/working-memory/summaries-lv2/`
