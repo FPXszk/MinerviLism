@@ -6,10 +6,12 @@ const PlotMock = () => null
 async function loadHook(options?: {
   factoryModule?: unknown
   plotlyModule?: unknown
+  scatterModule?: unknown
 }) {
   vi.resetModules()
   vi.doMock('react-plotly.js/factory', () => options?.factoryModule ?? { default: vi.fn(() => PlotMock) })
-  vi.doMock('plotly.js-dist-min', () => options?.plotlyModule ?? { default: { version: 'mock-plotly' } })
+  vi.doMock('plotly.js/lib/core', () => options?.plotlyModule ?? { default: { register: vi.fn() } })
+  vi.doMock('plotly.js/lib/scatter', () => options?.scatterModule ?? { default: { name: 'scatter' } })
   return import('./useLazyPlotComponent')
 }
 
@@ -17,7 +19,8 @@ describe('useLazyPlotComponent', () => {
   afterEach(() => {
     vi.resetModules()
     vi.doUnmock('react-plotly.js/factory')
-    vi.doUnmock('plotly.js-dist-min')
+    vi.doUnmock('plotly.js/lib/core')
+    vi.doUnmock('plotly.js/lib/scatter')
   })
 
   it('does not load Plotly until enabled', async () => {

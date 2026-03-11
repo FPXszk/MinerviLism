@@ -72,6 +72,20 @@ class BacktestRunInfo(BaseModel):
     tags: list[str] = Field(default_factory=list)
 
 
+class StrategyProfile(BaseModel):
+    strategy_name: str
+    display_name: str
+    short_name: str
+    title: str
+    description: str
+    icon_key: Optional[str] = None
+    experiment_name: Optional[str] = None
+    rule_profile: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    is_trader_strategy: bool = False
+    sort_order: int = 0
+
+
 class BacktestHeadlineMetrics(BaseModel):
     total_trades: int = 0
     total_pnl: float = 0
@@ -138,6 +152,10 @@ class BacktestMetadata(BaseModel):
 
 class BacktestListResponse(BaseModel):
     backtests: list[BacktestMetadata]
+
+
+class StrategyProfileListResponse(BaseModel):
+    strategies: list[StrategyProfile]
 
 
 class TopBottomTickers(BaseModel):

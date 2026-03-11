@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { StrategyProfile } from '../api/backtest'
 import { JobCreateRequest, JobResponse } from '../api/jobs';
 
 type RunPanelProps = {
@@ -8,6 +9,7 @@ type RunPanelProps = {
   activeJob: JobResponse | null;
   logs: string[];
   runError: string | null;
+  strategyProfiles: StrategyProfile[];
 };
 
 const COMMAND_OPTIONS = [
@@ -16,15 +18,6 @@ const COMMAND_OPTIONS = [
   { value: 'full', labelKey: 'runPanel.options.full' },
   { value: 'chart', labelKey: 'runPanel.options.chart' },
   { value: 'update_tickers', labelKey: 'runPanel.options.updateTickers' },
-] as const;
-
-const STRATEGY_OPTIONS = [
-  { value: 'rule-based-stage2', label: 'Baseline Stage2' },
-  { value: 'buffett-quality', label: 'Warren Buffett' },
-  { value: 'soros-breakout', label: 'George Soros' },
-  { value: 'lynch-growth', label: 'Peter Lynch' },
-  { value: 'minervini-trend', label: 'Mark Minervini' },
-  { value: 'dalio-balance', label: 'Ray Dalio' },
 ] as const;
 
 const YEAR_PRESETS = [
@@ -38,6 +31,7 @@ export const RunPanel: React.FC<RunPanelProps> = ({
   activeJob,
   logs,
   runError,
+  strategyProfiles,
 }) => {
   const { t } = useTranslation();
   const [command, setCommand] = useState<JobCreateRequest['command']>('backtest');
@@ -62,6 +56,20 @@ export const RunPanel: React.FC<RunPanelProps> = ({
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  const strategyOptions = useMemo(
+    () => (strategyProfiles.length > 0
+      ? strategyProfiles.map((profile) => ({ value: profile.strategy_name, label: profile.display_name }))
+      : [{ value: 'rule-based-stage2', label: 'Baseline Stage2' }]),
+    [strategyProfiles],
+  )
+
+  React.useEffect(() => {
+    if (strategyOptions.some((item) => item.value === strategyName)) {
+      return
+    }
+    setStrategyName(strategyOptions[0]?.value ?? 'rule-based-stage2')
+  }, [strategyName, strategyOptions])
 
   const statusColor = useMemo(() => {
     switch (activeJob?.status) {
@@ -168,7 +176,7 @@ export const RunPanel: React.FC<RunPanelProps> = ({
               onChange={(e) => setStrategyName(e.target.value)}
               disabled={isRunning || submitting}
             >
-              {STRATEGY_OPTIONS.map((item) => (
+              {strategyOptions.map((item) => (
                 <option key={item.value} value={item.value}>
                   {item.label}
                 </option>

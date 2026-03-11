@@ -5,67 +5,54 @@ import { fetchBacktestByRange, listAllBacktests, type BacktestMetadata, type Bac
 import { useBacktestDashboardContext } from './BacktestDashboard'
 import '../styles/dashboard-cards.css'
 
-type TraderProfile = {
-  id: string
-  name: string
-  emoji: string
-  title: string
-  description: string
+const ICON_BY_KEY: Record<string, string> = {
+  brain: '🧠',
+  bolt: '⚡',
+  chart: '📈',
+  target: '🎯',
+  balance: '⚖️',
+  layers: '🧪',
 }
-
-const TRADER_PROFILES: TraderProfile[] = [
-  {
-    id: 'buffett-quality',
-    name: 'Warren Buffett',
-    emoji: '🧠',
-    title: 'Quality compounders',
-    description: 'Looks for durable businesses with stable volatility, rising long-term trends, and patient holding periods.',
-  },
-  {
-    id: 'soros-breakout',
-    name: 'George Soros',
-    emoji: '⚡',
-    title: 'Reflexive breakout momentum',
-    description: 'Emphasizes decisive breakouts, fast confirmation, and quicker exits when the breakout thesis loses momentum.',
-  },
-  {
-    id: 'lynch-growth',
-    name: 'Peter Lynch',
-    emoji: '📈',
-    title: 'Everyday growth leaders',
-    description: 'Favors liquid growth names trending near highs while still maintaining a broad, understandable trend structure.',
-  },
-  {
-    id: 'minervini-trend',
-    name: 'Mark Minervini',
-    emoji: '🎯',
-    title: 'Trend template leadership',
-    description: 'Tracks leadership names near 52-week highs with relative-strength confirmation and tighter breakout risk control.',
-  },
-  {
-    id: 'dalio-balance',
-    name: 'Ray Dalio',
-    emoji: '⚖️',
-    title: 'Balanced trend participation',
-    description: 'Targets steadier trend participation with volatility control, tighter holding windows, and mean-reversion aware exits.',
-  },
-]
 
 export const TraderStrategiesPage: React.FC = () => {
   const { t } = useTranslation()
-  const { setSelectedTimestamp } = useBacktestDashboardContext()
-  const [selectedTraderId, setSelectedTraderId] = useState(TRADER_PROFILES[0].id)
+  const { setSelectedTimestamp, strategyProfiles } = useBacktestDashboardContext()
+  const traderProfiles = useMemo(
+    () => strategyProfiles.filter((profile) => profile.is_trader_strategy),
+    [strategyProfiles],
+  )
+  const [selectedTraderId, setSelectedTraderId] = useState('')
   const [summaryResult, setSummaryResult] = useState<BacktestResults | null>(null)
   const [availableBacktests, setAvailableBacktests] = useState<BacktestMetadata[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (traderProfiles.length === 0) {
+      setSelectedTraderId('')
+      return
+    }
+
+    if (traderProfiles.some((profile) => profile.strategy_name === selectedTraderId)) {
+      return
+    }
+
+    setSelectedTraderId(traderProfiles[0].strategy_name)
+  }, [selectedTraderId, traderProfiles])
+
   const selectedTrader = useMemo(
-    () => TRADER_PROFILES.find((profile) => profile.id === selectedTraderId) ?? TRADER_PROFILES[0],
-    [selectedTraderId],
+    () => traderProfiles.find((profile) => profile.strategy_name === selectedTraderId) ?? traderProfiles[0] ?? null,
+    [selectedTraderId, traderProfiles],
   )
 
   useEffect(() => {
+    if (!selectedTrader?.strategy_name) {
+      setAvailableBacktests([])
+      setSummaryResult(null)
+      setLoading(false)
+      return
+    }
+
     let active = true
 
     const loadTraderData = async () => {
@@ -74,8 +61,8 @@ export const TraderStrategiesPage: React.FC = () => {
 
       try {
         const [backtests, latest] = await Promise.all([
-          listAllBacktests(selectedTrader.id),
-          fetchBacktestByRange('ALL', selectedTrader.id),
+          listAllBacktests(selectedTrader.strategy_name),
+          fetchBacktestByRange('ALL', selectedTrader.strategy_name),
         ])
 
         if (!active) return
@@ -100,7 +87,11 @@ export const TraderStrategiesPage: React.FC = () => {
     return () => {
       active = false
     }
-  }, [selectedTrader.id, setSelectedTimestamp])
+  }, [selectedTrader, setSelectedTimestamp])
+
+  if (!selectedTrader) {
+    return <div className="dashboard-empty-panel">{t('dashboard.noBacktests')}</div>
+  }
 
   return (
     <div className="dashboard-page-stack">
@@ -113,15 +104,16 @@ export const TraderStrategiesPage: React.FC = () => {
         </div>
 
         <div className="trader-profile-grid">
-          {TRADER_PROFILES.map((profile) => (
+          {traderProfiles.map((profile) => (
             <button
-              key={profile.id}
+              key={profile.strategy_name}
               type="button"
-              className={`trader-profile-button ${profile.id === selectedTrader.id ? 'active' : ''}`}
-              onClick={() => setSelectedTraderId(profile.id)}
+              className={`trader-profile-button ${profile.strategy_name === selectedTrader.strategy_name ? 'active' : ''}`}
+              onClick={() => setSelectedTraderId(profile.strategy_name)}
             >
-              <span className="trader-profile-emoji" aria-hidden="true">{profile.emoji}</span>
-              <span className="trader-profile-name">{profile.name}</span>
+              <span className="trader-profile-emoji" aria-hidden="true">{ICON_BY_KEY[profile.icon_key ?? ''] ?? '🧩'}</span>
+              <span className="trader-profile-name">{profile.display_name}</span>
+              <span className="trader-profile-short">{profile.title}</span>
             </button>
           ))}
         </div>
@@ -130,7 +122,7 @@ export const TraderStrategiesPage: React.FC = () => {
       <section className="dashboard-card">
         <div className="dashboard-section-heading">
           <div>
-            <h2>{selectedTrader.name}</h2>
+            <h2>{selectedTrader.display_name}</h2>
             <p>{selectedTrader.title}</p>
           </div>
         </div>
@@ -160,7 +152,7 @@ export const TraderStrategiesPage: React.FC = () => {
                   <span>{backtest.trade_count} trades</span>
                 </div>
                 <div className="item-metadata">
-                  <span>{backtest.strategy_name ?? selectedTrader.id}</span>
+                  <span>{backtest.strategy_name ?? selectedTrader.strategy_name}</span>
                   {backtest.rule_profile ? <span>{backtest.rule_profile}</span> : null}
                 </div>
               </button>
@@ -204,6 +196,12 @@ export const TraderStrategiesPage: React.FC = () => {
         .trader-profile-name {
           font-weight: 700;
           color: #0f172a;
+          text-align: center;
+        }
+
+        .trader-profile-short {
+          color: #475569;
+          font-size: 13px;
           text-align: center;
         }
 

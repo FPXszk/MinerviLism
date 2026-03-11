@@ -11,6 +11,7 @@ const {
   fetchBacktestResultsMock,
   fetchLatestBacktestMock,
   fetchBacktestByRangeMock,
+  listStrategyProfilesMock,
   createJobMock,
   getJobMock,
   getJobLogsMock,
@@ -20,6 +21,7 @@ const {
   fetchBacktestResultsMock: vi.fn(),
   fetchLatestBacktestMock: vi.fn(),
   fetchBacktestByRangeMock: vi.fn(),
+  listStrategyProfilesMock: vi.fn(),
   createJobMock: vi.fn(),
   getJobMock: vi.fn(),
   getJobLogsMock: vi.fn(),
@@ -31,6 +33,7 @@ vi.mock('../api/backtest', () => ({
   fetchBacktestResults: fetchBacktestResultsMock,
   fetchLatestBacktest: fetchLatestBacktestMock,
   fetchBacktestByRange: fetchBacktestByRangeMock,
+  listStrategyProfiles: listStrategyProfilesMock,
 }))
 
 vi.mock('../api/jobs', () => ({
@@ -195,7 +198,7 @@ function LocationDisplay() {
 
 function renderDashboard(initialEntry = '/dashboard') {
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
+    <MemoryRouter initialEntries={[initialEntry]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <LocationDisplay />
       <Routes>
         <Route path="/dashboard" element={<BacktestDashboard />}>
@@ -222,6 +225,7 @@ describe('BacktestDashboard', () => {
     fetchBacktestResultsMock.mockReset()
     fetchLatestBacktestMock.mockReset()
     fetchBacktestByRangeMock.mockReset()
+    listStrategyProfilesMock.mockReset()
     createJobMock.mockReset()
     getJobMock.mockReset()
     getJobLogsMock.mockReset()
@@ -237,6 +241,21 @@ describe('BacktestDashboard', () => {
       ...sampleResults,
       timestamp: `pinned-${range}`,
     }))
+    listStrategyProfilesMock.mockResolvedValue([
+      {
+        strategy_name: 'rule-based-stage2',
+        display_name: 'Baseline Stage2',
+        short_name: 'Baseline',
+        title: 'Stage2 trend baseline',
+        description: 'Reference profile',
+        icon_key: 'layers',
+        experiment_name: 'minervini-stage2-baseline',
+        rule_profile: 'strict-auto-fallback',
+        tags: ['baseline'],
+        is_trader_strategy: false,
+        sort_order: 0,
+      },
+    ])
     createJobMock.mockResolvedValue(runningJob)
     getJobMock.mockResolvedValue({ ...runningJob, status: 'succeeded' })
     getJobLogsMock.mockResolvedValue({ job_id: 'job-1', status: 'running', lines: ['line-a', 'line-b'] })

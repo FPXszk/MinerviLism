@@ -164,6 +164,24 @@ export type SignalEventPoint = {
   label?: string | null;
 }
 
+export type StrategyProfile = {
+  strategy_name: string;
+  display_name: string;
+  short_name: string;
+  title: string;
+  description: string;
+  icon_key?: string | null;
+  experiment_name?: string | null;
+  rule_profile?: string | null;
+  tags?: Array<string>;
+  is_trader_strategy?: boolean;
+  sort_order?: number;
+}
+
+export type StrategyProfileListResponse = {
+  strategies: Array<StrategyProfile>;
+}
+
 export type TickerStats = {
   ticker: string;
   total_pnl: number;

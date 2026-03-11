@@ -59,7 +59,7 @@ describe('TopBottomPurchaseChart', () => {
     expect(firstCall.data[0].marker.size).toEqual([6, 28, 8])
   })
 
-  it('switches to scattergl for large datasets', () => {
+  it('keeps using scatter for large datasets to stay on the lighter Plotly bundle', () => {
     const data = Array.from({ length: 201 }, (_, index) => ({
       timestamp: `2024-01-${String((index % 30) + 1).padStart(2, '0')}`,
       price: 100 + index,
@@ -73,6 +73,6 @@ describe('TopBottomPurchaseChart', () => {
       data: Array<{ type: string }>
     }
 
-    expect(firstCall.data[0].type).toBe('scattergl')
+    expect(firstCall.data[0].type).toBe('scatter')
   })
 })

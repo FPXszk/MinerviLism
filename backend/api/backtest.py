@@ -26,6 +26,7 @@ from services.result_loader import (
 )
 from services.job_runner import job_runner
 from services.result_store import ResultStore, get_backtest_output_dir
+from services.strategy_profiles import load_strategy_profiles
 from schemas.backtest import (
     BacktestArtifactsResponse,
     BacktestListResponse,
@@ -37,6 +38,8 @@ from schemas.backtest import (
     BacktestSummary,
     BacktestVisualization,
     SignalEventPoint,
+    StrategyProfile,
+    StrategyProfileListResponse,
     TickerStats,
     TimeSeriesPoint,
     TopBottomTickers,
@@ -192,6 +195,17 @@ def list_backtests(strategy_name: Optional[str] = None):
     store = ResultStore(DEFAULT_OUTPUT_DIR)
     backtests = store.list_backtests(strategy_name=strategy_name)
     return BacktestListResponse(backtests=[BacktestMetadata(**backtest) for backtest in backtests])
+
+
+@router.get("/strategies", response_model=StrategyProfileListResponse)
+def list_strategies() -> StrategyProfileListResponse:
+    """List strategy profiles defined in params.yaml for frontend selection and tabs."""
+    try:
+        strategies = [StrategyProfile(**profile) for profile in load_strategy_profiles()]
+        return StrategyProfileListResponse(strategies=strategies)
+    except Exception as e:
+        logger.error(f"Failed to load strategy profiles: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/latest", response_model=BacktestResults)

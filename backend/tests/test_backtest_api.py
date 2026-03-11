@@ -161,6 +161,26 @@ class TestTickersEndpoint:
             assert len(data["bottom"]) == 2
 
 
+class TestStrategyProfilesEndpoint:
+    def test_returns_strategy_profiles_from_config(self):
+        from app import app
+        from fastapi.testclient import TestClient
+
+        client = TestClient(app)
+        response = client.get("/api/backtest/strategies")
+
+        assert response.status_code == 200
+        data = response.json()
+        strategy_names = [item["strategy_name"] for item in data["strategies"]]
+        assert "rule-based-stage2" in strategy_names
+        assert "buffett-quality" in strategy_names
+
+        buffett = next(item for item in data["strategies"] if item["strategy_name"] == "buffett-quality")
+        assert buffett["display_name"] == "Warren Buffett"
+        assert buffett["is_trader_strategy"] is True
+        assert buffett["icon_key"] == "brain"
+
+
 class TestBacktestRunMetadata:
     def test_get_results_by_timestamp_includes_run_metadata(self, tmp_path):
         import json

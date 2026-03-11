@@ -5,8 +5,10 @@ import {
   fetchBacktestByRange,
   fetchBacktestResults,
   listAllBacktests,
+  listStrategyProfiles,
   type BacktestMetadata,
   type BacktestResults,
+  type StrategyProfile,
 } from '../api/backtest'
 import { type JobCreateRequest, type JobResponse } from '../api/jobs'
 import { useBacktestJobManagement } from './useBacktestJobManagement'
@@ -14,6 +16,7 @@ import { useBacktestJobManagement } from './useBacktestJobManagement'
 export interface UseBacktestDashboardStateResult {
   results: BacktestResults | null
   backtests: BacktestMetadata[]
+  strategyProfiles: StrategyProfile[]
   pinnedAnnualResults: Array<{
     period: string
     result: BacktestResults | null
@@ -41,6 +44,7 @@ export function useBacktestDashboardState(): UseBacktestDashboardStateResult {
   const { t } = useTranslation()
   const [results, setResults] = useState<BacktestResults | null>(null)
   const [backtests, setBacktests] = useState<BacktestMetadata[]>([])
+  const [strategyProfiles, setStrategyProfiles] = useState<StrategyProfile[]>([])
   const [pinnedAnnualResults, setPinnedAnnualResults] = useState<
     Array<{ period: string; result: BacktestResults | null; error: string | null }>
   >([])
@@ -54,6 +58,11 @@ export function useBacktestDashboardState(): UseBacktestDashboardStateResult {
     if (data.length > 0) {
       setSelectedTimestamp((current) => current ?? data[0].timestamp)
     }
+  }, [])
+
+  const loadStrategyMetadata = useCallback(async () => {
+    const data = await listStrategyProfiles()
+    setStrategyProfiles(data)
   }, [])
 
   const loadPinnedAnnualResults = useCallback(async () => {
@@ -77,14 +86,14 @@ export function useBacktestDashboardState(): UseBacktestDashboardStateResult {
   useEffect(() => {
     const loadInitialState = async () => {
       try {
-        await Promise.all([loadBacktests(), loadPinnedAnnualResults()])
+        await Promise.all([loadBacktests(), loadPinnedAnnualResults(), loadStrategyMetadata()])
       } catch (err) {
         setError(t('dashboard.loadBacktestListError', { error: String(err) }))
       }
     }
 
     void loadInitialState()
-  }, [loadBacktests, loadPinnedAnnualResults, t])
+  }, [loadBacktests, loadPinnedAnnualResults, loadStrategyMetadata, t])
 
   useEffect(() => {
     if (!selectedTimestamp) return
@@ -133,6 +142,7 @@ export function useBacktestDashboardState(): UseBacktestDashboardStateResult {
   return {
     results,
     backtests,
+    strategyProfiles,
     pinnedAnnualResults,
     selectedTimestamp,
     setSelectedTimestamp,

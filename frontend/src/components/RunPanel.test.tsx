@@ -9,6 +9,34 @@ const baseProps = {
   activeJob: null,
   logs: [],
   runError: null,
+  strategyProfiles: [
+    {
+      strategy_name: 'rule-based-stage2',
+      display_name: 'Baseline Stage2',
+      short_name: 'Baseline',
+      title: 'Stage2 trend baseline',
+      description: 'Reference profile',
+      icon_key: 'layers',
+      experiment_name: 'minervini-stage2-baseline',
+      rule_profile: 'strict-auto-fallback',
+      tags: ['baseline'],
+      is_trader_strategy: false,
+      sort_order: 0,
+    },
+    {
+      strategy_name: 'buffett-quality',
+      display_name: 'Warren Buffett',
+      short_name: 'Buffett',
+      title: 'Quality compounders',
+      description: 'Trader inspired profile',
+      icon_key: 'brain',
+      experiment_name: 'buffett-quality-inspired',
+      rule_profile: 'quality-compounder',
+      tags: ['trader-inspired'],
+      is_trader_strategy: true,
+      sort_order: 10,
+    },
+  ],
 }
 
 describe('RunPanel', () => {

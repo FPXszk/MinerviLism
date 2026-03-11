@@ -202,7 +202,7 @@ npm --prefix frontend run dev -- --host 0.0.0.0 --port 3000 --strictPort
 
 - `/` - バックテスト実行と上位/下位銘柄のホーム画面
 - `/home` - ホーム画面の別ルート
-- `/dashboard` - KPI 概要、条件比較、実験一覧テーブル、ジョブ状態を表示するダッシュボード
+- `/dashboard` - KPI 概要、条件比較、実験一覧テーブル、ジョブ状態を表示するダッシュボード（実験一覧の search / filter / sort は URL と localStorage に保持）
 - `/dashboard/analysis` - エクイティカーブ、ドローダウン、シグナルイベント、チャートギャラリー、トレード一覧を表示する詳細画面
 - `/dashboard/strategies` - 著名トレーダーに着想を得た strategy profile を選び、概要と対応 run を比較する画面
 - `/chart/:ticker` - 個別銘柄チャート
@@ -211,6 +211,8 @@ localhost 可視化で使うデータ I/O 契約:
 
 - 実験メタデータ: `GET /api/backtest/list`
   - `timestamp`, `period`, `run_label`, `experiment_name`, `strategy_name`, `rule_profile`, `headline_metrics`
+- strategy profile 一覧: `GET /api/backtest/strategies`
+  - `strategy_name`, `display_name`, `title`, `description`, `icon_key`, `rule_profile`, `tags`
 - 結果概要と詳細: `GET /api/backtest/latest`, `GET /api/backtest/results/{timestamp}`
   - `summary`: 総トレード数、勝率、年率、IR、MDD、最終資産など
   - `visualization`: `equity_curve`, `drawdown`, `signal_events`

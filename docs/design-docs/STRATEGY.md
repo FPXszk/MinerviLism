@@ -114,6 +114,7 @@ Strictモードでトレードが0件の場合に自動発動。
 
 - 既定値は `rule-based-stage2`。
 - 追加の strategy profile は公開情報の特徴量を抽出した `trader-inspired` 方式で実装する。
+- UI 表示名 / 説明 / icon key も `python/config/params.yaml` の `strategy_profiles` を正本とし、backend の `GET /api/backtest/strategies` で frontend に配布する。
 - 現在の profile:
   - `buffett-quality`
   - `soros-breakout`
@@ -121,7 +122,7 @@ Strictモードでトレードが0件の場合に自動発動。
   - `minervini-trend`
   - `dalio-balance`
 - profile 選択は `python/main.py --strategy <strategy_name>` で行い、選択内容は `run_manifest.json` の `strategy_name` / `rule_profile` に保存する。
-- frontend の `/dashboard/strategies` はこの metadata を参照して run を切り替える。
+- frontend の `/dashboard/strategies` と Run & Manage の strategy selector は `GET /api/backtest/strategies` の metadata を共通利用する。
 
 ---
 

@@ -26,6 +26,7 @@ export const BacktestRunPage: React.FC = () => {
     selectedTimestamp,
     setSelectedTimestamp,
     pinnedAnnualResults = [],
+    strategyProfiles,
     activeJob,
     jobLogs,
     runError,
@@ -59,6 +60,7 @@ export const BacktestRunPage: React.FC = () => {
             activeJob={activeJob}
             logs={jobLogs}
             runError={runError}
+            strategyProfiles={strategyProfiles}
           />
         </section>
 

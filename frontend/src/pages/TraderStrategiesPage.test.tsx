@@ -25,7 +25,37 @@ vi.mock('../components/BacktestSummary', () => ({
 
 describe('TraderStrategiesPage', () => {
   beforeEach(() => {
-    contextMock.mockReturnValue({ setSelectedTimestamp: vi.fn() })
+    contextMock.mockReturnValue({
+      setSelectedTimestamp: vi.fn(),
+      strategyProfiles: [
+        {
+          strategy_name: 'buffett-quality',
+          display_name: 'Warren Buffett',
+          short_name: 'Buffett',
+          title: 'Quality compounders',
+          description: 'Looks for durable businesses.',
+          icon_key: 'brain',
+          experiment_name: 'buffett-quality-inspired',
+          rule_profile: 'quality-compounder',
+          tags: ['trader-inspired'],
+          is_trader_strategy: true,
+          sort_order: 10,
+        },
+        {
+          strategy_name: 'soros-breakout',
+          display_name: 'George Soros',
+          short_name: 'Soros',
+          title: 'Reflexive breakout momentum',
+          description: 'Fast confirmation and quicker exits.',
+          icon_key: 'bolt',
+          experiment_name: 'soros-breakout-inspired',
+          rule_profile: 'macro-breakout',
+          tags: ['trader-inspired'],
+          is_trader_strategy: true,
+          sort_order: 20,
+        },
+      ],
+    })
     listAllBacktestsMock.mockResolvedValue([
       {
         timestamp: 'buffett-run',
@@ -56,6 +86,6 @@ describe('TraderStrategiesPage', () => {
     await waitFor(() => expect(listAllBacktestsMock).toHaveBeenCalledWith('buffett-quality'))
     expect(fetchBacktestByRangeMock).toHaveBeenCalledWith('ALL', 'buffett-quality')
     expect(await screen.findByTestId('trader-summary')).toHaveTextContent('5')
-    expect(screen.getByText(/quality compounders/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/quality compounders/i).length).toBeGreaterThan(0)
   })
 })

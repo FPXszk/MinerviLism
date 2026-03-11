@@ -6,9 +6,11 @@ import type {
   BacktestResults,
   BacktestSummary,
   BacktestVisualization,
+  SignalEventPoint,
+  StrategyProfile,
+  StrategyProfileListResponse,
   TickerStats,
   TimeSeriesPoint,
-  SignalEventPoint,
   TradeRecord,
 } from './generated/contracts'
 
@@ -19,6 +21,7 @@ export type {
   BacktestSummary,
   BacktestVisualization,
   SignalEventPoint,
+  StrategyProfile,
   TickerStats,
   TimeSeriesPoint,
   TradeRecord,
@@ -79,4 +82,13 @@ export async function listAllBacktests(strategyName?: string): Promise<BacktestM
   }
   const data = (await response.json()) as BacktestListResponse;
   return data.backtests;
+}
+
+export async function listStrategyProfiles(): Promise<StrategyProfile[]> {
+  const response = await fetch(buildApiUrl('/backtest/strategies'))
+  if (!response.ok) {
+    throw new Error(`Failed to list strategy profiles: ${response.statusText}`)
+  }
+  const data = (await response.json()) as StrategyProfileListResponse
+  return data.strategies
 }

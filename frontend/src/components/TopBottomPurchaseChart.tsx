@@ -28,7 +28,7 @@ export default function TopBottomPurchaseChart({
         <PlotComponent
           data={[
             {
-              type: data.length > 200 ? 'scattergl' : 'scatter',
+              type: 'scatter',
               mode: 'markers',
               x,
               y,

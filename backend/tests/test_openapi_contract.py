@@ -19,15 +19,19 @@ def test_openapi_contains_expected_contract_schemas():
     assert 'BacktestResults' in components
     assert 'BacktestMetadata' in components
     assert 'BacktestRunInfo' in components
+    assert 'StrategyProfile' in components
+    assert 'StrategyProfileListResponse' in components
     assert 'TopBottomTickers' in components
     assert 'ChartData' in components
     assert 'TradeMarkers' in components
     assert 'JobResponse' in components
 
     latest_schema_ref = schema['paths']['/api/backtest/latest']['get']['responses']['200']['content']['application/json']['schema']['$ref']
+    strategy_schema_ref = schema['paths']['/api/backtest/strategies']['get']['responses']['200']['content']['application/json']['schema']['$ref']
     jobs_schema_ref = schema['paths']['/api/jobs/{job_id}']['get']['responses']['200']['content']['application/json']['schema']['$ref']
 
     assert latest_schema_ref.endswith('/BacktestResults')
+    assert strategy_schema_ref.endswith('/StrategyProfileListResponse')
     assert jobs_schema_ref.endswith('/JobResponse')
 
 
@@ -42,6 +46,8 @@ def test_contract_export_generates_typescript_definitions(tmp_path):
     assert 'export type JobResponse' in content
     assert 'export type TradeMarkers' in content
     assert 'export type BacktestRunInfo' in content
+    assert 'export type StrategyProfile' in content
+    assert 'strategies: Array<StrategyProfile>;' in content
     assert 'is_pinned?: boolean' in content
     assert 'available_runs?: number' in content
     assert 'run_metadata?: BacktestRunInfo | null' in content

@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { BacktestRunPage } from './BacktestRunPage'
 
@@ -18,6 +19,14 @@ vi.mock('../components/RunPanel', () => ({
 }))
 
 const setSelectedTimestamp = vi.fn()
+
+function renderPage() {
+  return render(
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BacktestRunPage />
+    </MemoryRouter>,
+  )
+}
 
 describe('BacktestRunPage', () => {
   it('renders pinned runs and allows selecting another run', async () => {
@@ -103,7 +112,7 @@ describe('BacktestRunPage', () => {
       handleCancelCommand: vi.fn(),
     })
 
-    render(<BacktestRunPage />)
+    renderPage()
 
     expect(screen.getByTestId('run-panel')).toHaveTextContent('running:1')
     expect(screen.getByText('Pinned Annual Results')).toBeInTheDocument()
@@ -143,7 +152,7 @@ describe('BacktestRunPage', () => {
       handleCancelCommand: vi.fn(),
     })
 
-    render(<BacktestRunPage />)
+    renderPage()
 
     expect(screen.getAllByText('No backtests found').length).toBeGreaterThan(0)
   })

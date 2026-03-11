@@ -23,6 +23,7 @@
   - [tech-debt-tracker.md](../exec-plans/tech-debt-tracker.md) — tech-debt-tracker — 目的: 技術的負債の一覧と優先度管理
   - `docs/exec-plans/active/`
     - [index.md](../exec-plans/active/index.md) — exec-plans/active — ここには現在進行中の実行計画を置きます。
+    - [dashboard-followup-batch-2.md](../exec-plans/active/dashboard-followup-batch-2.md) — 実装計画: ダッシュボード軽量化と保守性改善バッチ 2 — - フェーズ: localhost 可視化改善 Phase 3
     - [dashboard-improvement-batch-1.md](../exec-plans/active/dashboard-improvement-batch-1.md) — 実装計画: ダッシュボード改善バッチ 1 — - タイトル: ダッシュボード改善バッチ 1
     - [qlib-phase1-release-and-frontend-visualization.md](../exec-plans/active/qlib-phase1-release-and-frontend-visualization.md) — 実装計画: qlib phase-1 リリース整理と localhost 可視化初回イテレーション — - タイトル: qlib phase-1 リリース整理と localhost 可視化初回イテレーション
   - `docs/exec-plans/completed/`
