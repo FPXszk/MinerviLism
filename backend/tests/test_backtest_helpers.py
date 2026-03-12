@@ -265,6 +265,7 @@ def test_get_backtest_results_by_dir_loads_charts_and_aliases(monkeypatch, tmp_p
     assert result.charts['AAA_price_chart'] == 'encoded:AAA_price_chart'
     assert result.charts['AAA'] == 'encoded:AAA_price_chart'
     assert result.charts['equity_curve'] == 'encoded:equity_curve'
+    assert result.chart_previews['AAA'] == 'encoded:AAA_price_chart'
 
 
 def test_get_backtest_results_by_dir_raises_for_missing_directory():

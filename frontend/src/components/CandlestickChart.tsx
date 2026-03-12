@@ -9,7 +9,6 @@
  * - Zoom and pan
  */
 import React from 'react'
-import { buildApiUrl } from '../api/base'
 
 export interface CandlestickData {
   dates: string[]
@@ -34,6 +33,7 @@ interface CandlestickChartProps {
   markers?: TradeMarkerData
   width?: number
   height?: number
+  previewImage?: string | null
 }
 
 // TradingView-inspired dark theme colors
@@ -228,37 +228,12 @@ export function CandlestickChart({
   markers,
   width,
   height,
+  previewImage = null,
 }: CandlestickChartProps) {
   const traces = buildCandlestickTraces(data, markers)
   const layout = buildChartLayout(ticker, width, height)
 
   const [bgImage, setBgImage] = React.useState<string | null>(null)
-
-  const fetchChartPreview = React.useCallback(async () => {
-    if (typeof window === 'undefined') return
-    try {
-      const res = await fetch(buildApiUrl('/backtest/latest'))
-      if (!res.ok) return
-      const payload = await res.json()
-      const charts = (payload && (payload as any).charts) || {}
-      const keys = Object.keys(charts || {})
-      let key = keys.find((k) => k === `${ticker}_price_chart`) || keys.find((k) => k === ticker) || keys.find((k) => k.includes(ticker)) || keys.find((k) => k.includes('_price_chart'))
-      if (!key && keys.length > 0) key = keys[0]
-      if (key && charts[key]) setBgImage(charts[key])
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to fetch chart preview', e)
-    }
-  }, [ticker])
-
-  // Fetch latest backtest charts and pick the one corresponding to this ticker or selected period
-  React.useEffect(() => {
-      try {
-        void fetchChartPreview()
-      } catch (e) {
-        console.warn('fetchChartPreview failed', e)
-      }
-  }, [fetchChartPreview])
 
   let layoutWithImage: any = layout as any
 
@@ -267,7 +242,7 @@ export function CandlestickChart({
     let cancelled = false
     async function generateImageFromPlot() {
       try {
-        if (bgImage) return
+        if (previewImage || bgImage) return
         if (typeof document === 'undefined') return
         if (typeof navigator !== 'undefined' && navigator.userAgent.includes('jsdom')) return
 
@@ -427,13 +402,14 @@ export function CandlestickChart({
     return () => {
       cancelled = true
     }
-  }, [bgImage, traces, layoutWithImage, ticker])
+  }, [bgImage, previewImage, traces, layoutWithImage, ticker])
 
   // If a background image is available, add it to the Plotly layout so it scales with the plot
+  const resolvedPreviewImage = previewImage ?? bgImage
   const computedLayoutWithImage = React.useMemo(() => {
-    if (!bgImage) return layout
+    if (!resolvedPreviewImage) return layout
     const img = {
-      source: bgImage,
+      source: resolvedPreviewImage,
       xref: 'paper',
       yref: 'paper',
       x: 0,
@@ -445,13 +421,13 @@ export function CandlestickChart({
       opacity: 0.95,
     }
     return { ...layout, images: [img], autosize: true }
-  }, [bgImage, layout])
+  }, [layout, resolvedPreviewImage])
 
   layoutWithImage = computedLayoutWithImage
 
   return (
     <div data-testid="candlestick-chart" style={{ width: '100%' }}>
-      {(data.dates.length === 0 && !bgImage && (!markers || ((markers.entries?.length||0) === 0 && (markers.exits?.length||0) === 0))) ? (
+      {(data.dates.length === 0 && !resolvedPreviewImage && (!markers || ((markers.entries?.length||0) === 0 && (markers.exits?.length||0) === 0))) ? (
         <p data-testid="no-data-message">No chart data available</p>
       ) : (
         <div data-testid="plotly-chart">
@@ -475,7 +451,7 @@ export function CandlestickChart({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+                backgroundImage: resolvedPreviewImage ? `url(${resolvedPreviewImage})` : undefined,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',

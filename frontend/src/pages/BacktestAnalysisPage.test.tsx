@@ -41,6 +41,7 @@ const sampleResults = {
   trades: [{ ticker: 'AAA' }, { ticker: 'BBB' }],
   ticker_stats: [{ ticker: 'AAA', total_pnl: 10, trade_count: 1 }],
   charts: {},
+  chart_previews: { AAA: 'data:image/png;base64,aaa' },
   run_metadata: {
     run_id: 'backtest_2025-01-01_to_2025-12-31_20251231-235959',
     run_label: 'baseline-run',

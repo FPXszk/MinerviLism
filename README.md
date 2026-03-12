@@ -235,7 +235,7 @@ npm --prefix frontend run test:coverage
 
 ## Electron
 
-Electron メインプロセスは `electron/main.ts` で管理され、renderer は `frontend/dist` から `renderer-dist/` へコピーされます。
+Electron メインプロセスは `electron/main.ts` で管理され、renderer は `frontend/dist` から `renderer-dist/` へコピーされます。`renderer-dist/` は build 時に生成されるローカル成果物であり、Git 管理対象外です。
 
 主なコマンド:
 

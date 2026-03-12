@@ -4,6 +4,7 @@ import net from 'node:net'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 const rootDir = path.resolve(__dirname, '../../..')
@@ -60,6 +61,21 @@ async function waitForBackend(url: string, timeoutMs = 60000): Promise<void> {
 }
 
 beforeAll(async () => {
+  class AlwaysVisibleObserver {
+    constructor(private callback: IntersectionObserverCallback) {}
+    observe(target: Element) {
+      this.callback([{ isIntersecting: true, target } as IntersectionObserverEntry], this as unknown as IntersectionObserver)
+    }
+    disconnect() {}
+    unobserve() {}
+    takeRecords() { return [] }
+    root = null
+    rootMargin = '0px'
+    thresholds = []
+  }
+
+  vi.stubGlobal('IntersectionObserver', AlwaysVisibleObserver)
+
   const port = await findFreePort()
   apiBaseUrl = `http://127.0.0.1:${port}`
 
@@ -89,6 +105,8 @@ afterAll(async () => {
     backendProcess?.once('exit', () => resolve())
     setTimeout(() => resolve(), 5000)
   })
+
+  vi.unstubAllGlobals()
 })
 
 describe('BacktestDashboard E2E', () => {
@@ -101,10 +119,12 @@ describe('BacktestDashboard E2E', () => {
     'renders fixture-backed results from the real backend',
     async () => {
       vi.resetModules()
+      await import('../i18n')
       const { AppChromeProvider } = await import('../contexts/AppChromeContext')
       const { BacktestDashboard } = await import('./BacktestDashboard')
       const { BacktestRunPage } = await import('./BacktestRunPage')
       const { BacktestAnalysisPage } = await import('./BacktestAnalysisPage')
+      const { TraderStrategiesPage } = await import('./TraderStrategiesPage')
 
       render(
         <AppChromeProvider>
@@ -114,13 +134,14 @@ describe('BacktestDashboard E2E', () => {
                 <Route index element={<Navigate to="run" replace />} />
                 <Route path="run" element={<BacktestRunPage />} />
                 <Route path="analysis" element={<BacktestAnalysisPage />} />
+                <Route path="strategies" element={<TraderStrategiesPage />} />
               </Route>
             </Routes>
           </MemoryRouter>
         </AppChromeProvider>,
       )
 
-      expect(await screen.findByText('Analysis & Results')).toBeInTheDocument()
+      expect(await screen.findByText('Summary')).toBeInTheDocument()
       expect(await screen.findByText('backtest_2026-01-01_to_2026-01-31')).toBeInTheDocument()
 
       await act(async () => {
@@ -129,6 +150,44 @@ describe('BacktestDashboard E2E', () => {
 
       expect((await screen.findAllByText('AAA')).length).toBeGreaterThan(0)
       expect((await screen.findAllByText('CCC')).length).toBeGreaterThan(0)
+      expect(await screen.findByText('Top1')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /expand chart for aaa/i })).toBeInTheDocument()
+    },
+    60000,
+  )
+
+  it(
+    'shows the Minervini baseline on the trader strategies route',
+    async () => {
+      const user = userEvent.setup()
+      vi.resetModules()
+      await import('../i18n')
+      const { AppChromeProvider } = await import('../contexts/AppChromeContext')
+      const { BacktestDashboard } = await import('./BacktestDashboard')
+      const { BacktestRunPage } = await import('./BacktestRunPage')
+      const { BacktestAnalysisPage } = await import('./BacktestAnalysisPage')
+      const { TraderStrategiesPage } = await import('./TraderStrategiesPage')
+
+      render(
+        <AppChromeProvider>
+          <MemoryRouter initialEntries={['/dashboard/run']}>
+            <Routes>
+              <Route path="/dashboard" element={<BacktestDashboard />}>
+                <Route index element={<Navigate to="run" replace />} />
+                <Route path="run" element={<BacktestRunPage />} />
+                <Route path="analysis" element={<BacktestAnalysisPage />} />
+                <Route path="strategies" element={<TraderStrategiesPage />} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </AppChromeProvider>,
+      )
+
+      await user.click(await screen.findByRole('link', { name: 'Trader Strategies' }))
+
+      expect(await screen.findByRole('button', { name: /マーク・ミネルヴィニ/i })).toBeInTheDocument()
+      expect(screen.getByRole('img', { name: /マーク・ミネルヴィニ portrait/i })).toBeInTheDocument()
+      expect(await screen.findByText('トレンドテンプレート主導')).toBeInTheDocument()
     },
     60000,
   )

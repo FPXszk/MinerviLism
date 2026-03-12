@@ -122,6 +122,7 @@ class BacktestResults(BaseModel):
     trades: list[TradeRecord]
     ticker_stats: list[TickerStats]
     charts: dict[str, Optional[str]]
+    chart_previews: dict[str, Optional[str]] = Field(default_factory=dict)
     run_metadata: Optional[BacktestRunInfo] = None
     visualization: BacktestVisualization = Field(default_factory=BacktestVisualization)
 

@@ -55,6 +55,7 @@ export type BacktestResults = {
   trades: Array<TradeRecord>;
   ticker_stats: Array<TickerStats>;
   charts: Record<string, string | null>;
+  chart_previews?: Record<string, string | null>;
   run_metadata?: BacktestRunInfo | null;
   visualization?: BacktestVisualization;
 }

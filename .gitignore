@@ -29,6 +29,7 @@ coverage/
 node_modules/
 dist/
 release/
+renderer-dist/
 
 # Python
 __pycache__/

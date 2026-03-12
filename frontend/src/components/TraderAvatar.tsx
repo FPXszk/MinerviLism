@@ -1,89 +1,9 @@
 import React from 'react'
-import buffettPortrait from '../assets/traders/buffett.png'
-import dalioPortrait from '../assets/traders/dalio.png'
-import lynchPortrait from '../assets/traders/lynch.png'
-import minerviniPortrait from '../assets/traders/minervini.png'
-import sorosPortrait from '../assets/traders/soros.png'
+import { getTraderVisual, type TraderPalette } from '../domain/traderProfiles'
 
 type TraderAvatarProps = {
   traderKey: string
   label: string
-}
-
-type TraderPalette = {
-  background: string
-  accent: string
-  hair: string
-  jacket: string
-  detail: string
-}
-
-type TraderVisual = {
-  portraitSrc?: string
-  fallbackPalette: TraderPalette
-}
-
-const TRADER_VISUALS: Record<string, TraderVisual> = {
-  'buffett-quality': {
-    portraitSrc: buffettPortrait,
-    fallbackPalette: {
-      background: '#fef3c7',
-      accent: '#f59e0b',
-      hair: '#f8fafc',
-      jacket: '#1f2937',
-      detail: '#92400e',
-    },
-  },
-  'soros-breakout': {
-    portraitSrc: sorosPortrait,
-    fallbackPalette: {
-      background: '#dbeafe',
-      accent: '#2563eb',
-      hair: '#cbd5e1',
-      jacket: '#0f172a',
-      detail: '#1d4ed8',
-    },
-  },
-  'lynch-growth': {
-    portraitSrc: lynchPortrait,
-    fallbackPalette: {
-      background: '#dcfce7',
-      accent: '#16a34a',
-      hair: '#334155',
-      jacket: '#14532d',
-      detail: '#166534',
-    },
-  },
-  'minervini-trend': {
-    portraitSrc: minerviniPortrait,
-    fallbackPalette: {
-      background: '#fae8ff',
-      accent: '#c026d3',
-      hair: '#0f172a',
-      jacket: '#581c87',
-      detail: '#a21caf',
-    },
-  },
-  'dalio-balance': {
-    portraitSrc: dalioPortrait,
-    fallbackPalette: {
-      background: '#ede9fe',
-      accent: '#7c3aed',
-      hair: '#475569',
-      jacket: '#312e81',
-      detail: '#6d28d9',
-    },
-  },
-}
-
-const DEFAULT_VISUAL: TraderVisual = {
-  fallbackPalette: {
-    background: '#e2e8f0',
-    accent: '#64748b',
-    hair: '#334155',
-    jacket: '#1e293b',
-    detail: '#475569',
-  },
 }
 
 function TraderAvatarFallback({ label, palette }: { label: string; palette: TraderPalette }) {
@@ -104,7 +24,7 @@ function TraderAvatarFallback({ label, palette }: { label: string; palette: Trad
 }
 
 export const TraderAvatar: React.FC<TraderAvatarProps> = ({ traderKey, label }) => {
-  const visual = TRADER_VISUALS[traderKey] ?? DEFAULT_VISUAL
+  const visual = getTraderVisual(traderKey)
   const [imageFailed, setImageFailed] = React.useState(false)
 
   React.useEffect(() => {

@@ -19,6 +19,7 @@ export interface PurchaseChartItem {
 interface TopBottomPurchaseChartsProps {
   trades: TradeRecord[]
   tickerStats: TickerStats[]
+  chartPreviews?: Record<string, string | null | undefined>
   loading?: boolean
   limit?: number
 }
@@ -129,6 +130,7 @@ export function buildTopBottomPurchaseCharts(
 export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = ({
   trades,
   tickerStats,
+  chartPreviews = {},
   loading = false,
   limit = 5,
 }) => {
@@ -213,6 +215,7 @@ export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = (
                 markers={{ entries: item.purchases.map(p => ({ date: p.timestamp, price: p.price })), exits: [] }}
                 width={420}
                 height={240}
+                previewImage={chartPreviews[item.ticker] ?? null}
               />
             </button>
           </div>
@@ -243,6 +246,7 @@ export const TopBottomPurchaseCharts: React.FC<TopBottomPurchaseChartsProps> = (
               markers={{ entries: expandedTicker.purchases.map((p) => ({ date: p.timestamp, price: p.price })), exits: [] }}
               width={960}
               height={560}
+              previewImage={chartPreviews[expandedTicker.ticker] ?? null}
             />
           </div>
         </div>

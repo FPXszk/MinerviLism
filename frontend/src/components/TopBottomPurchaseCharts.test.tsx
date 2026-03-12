@@ -9,7 +9,9 @@ import {
 import { TradeRecord, TickerStats } from '../api/backtest'
 
 vi.mock('./CandlestickChart', () => ({
-  CandlestickChart: () => <div data-testid="candlestick-chart" />,
+  CandlestickChart: ({ ticker, previewImage }: { ticker: string; previewImage?: string | null }) => (
+    <div data-testid="candlestick-chart" data-ticker={ticker} data-preview={previewImage ?? ''} />
+  ),
 }))
 
 const trades: TradeRecord[] = [
@@ -85,13 +87,21 @@ describe('TopBottomPurchaseCharts', () => {
   })
 
   it('renders chart cards when data exists', () => {
-    render(<TopBottomPurchaseCharts trades={trades} tickerStats={stats} limit={1} />)
+    render(
+      <TopBottomPurchaseCharts
+        trades={trades}
+        tickerStats={stats}
+        chartPreviews={{ AAA: 'data:image/png;base64,aaa', CCC: 'data:image/png;base64,ccc' }}
+        limit={1}
+      />,
+    )
     expect(screen.getByTestId('purchase-charts')).toBeInTheDocument()
     expect(screen.getAllByTestId('purchase-chart-card')).toHaveLength(2)
     expect(screen.getAllByTestId('candlestick-chart')).toHaveLength(2)
     expect(screen.getByText('Top1')).toBeInTheDocument()
     expect(screen.queryByText('Expand chart')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /expand chart for aaa/i })).toBeInTheDocument()
+    expect(screen.getAllByTestId('candlestick-chart')[0]).toHaveAttribute('data-preview', 'data:image/png;base64,aaa')
   })
 
   it('opens an expanded lightbox when a chart is selected', async () => {

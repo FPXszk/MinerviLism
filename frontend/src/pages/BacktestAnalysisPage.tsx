@@ -75,6 +75,7 @@ export const BacktestAnalysisPage: React.FC = () => {
               <TopBottomPurchaseCharts
                 trades={results.trades}
                 tickerStats={results.ticker_stats}
+                chartPreviews={results.chart_previews}
                 loading={loading}
               />
             </React.Suspense>

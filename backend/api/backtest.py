@@ -378,6 +378,20 @@ def _build_visualization(result_dir: str, trades: list[TradeRecord]) -> Backtest
     )
 
 
+def _build_chart_previews(charts: dict[str, str | None]) -> dict[str, str | None]:
+    previews: dict[str, str | None] = {}
+    for chart_key, image in charts.items():
+        if image is None:
+            continue
+        if chart_key.endswith("_price_chart"):
+            ticker = chart_key.replace("_price_chart", "")
+            previews[ticker] = image
+            continue
+        if "_" not in chart_key and any(character.isalpha() for character in chart_key):
+            previews.setdefault(chart_key, image)
+    return previews
+
+
 def _get_backtest_results_by_dir(result_dir: str, dir_name: str, run=None) -> BacktestResults:
     """Helper function to load backtest results from a directory."""
     if not os.path.exists(result_dir):
@@ -519,6 +533,7 @@ def _get_backtest_results_by_dir(result_dir: str, dir_name: str, run=None) -> Ba
         trades=trades,
         ticker_stats=ticker_stats,
         charts=charts,
+        chart_previews=_build_chart_previews(charts),
         run_metadata=_build_run_metadata(run),
         visualization=_build_visualization(result_dir, trades),
     )
