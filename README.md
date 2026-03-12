@@ -147,10 +147,7 @@ python/output/backtest/
 リポジトリルートから起動します。
 
 ```bash
-cd python
-source .venv/bin/activate
-cd ..
-python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
+./python/.venv/bin/python3 -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
 主なエンドポイント:
@@ -167,10 +164,10 @@ python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
 - `GET /api/jobs/{job_id}/logs`
 - `POST /api/jobs/{job_id}/cancel`
 
-出力ディレクトリを切り替えたい場合は `INVEST_OUTPUT_DIR` を指定します。
+出力ディレクトリを切り替えたい場合は `MINERVILISM_OUTPUT_DIR` を指定します。旧名 `INVEST_OUTPUT_DIR` も後方互換のため引き続き受け付けます。
 
 ```bash
-INVEST_OUTPUT_DIR=/absolute/path/to/backtest python -m uvicorn backend.app:app --host 0.0.0.0 --port 8000
+MINERVILISM_OUTPUT_DIR=/absolute/path/to/backtest ./python/.venv/bin/python3 -m uvicorn backend.app:app --host 0.0.0.0 --port 8000
 ```
 
 ## OpenAPI 契約と frontend 型生成
@@ -178,10 +175,7 @@ INVEST_OUTPUT_DIR=/absolute/path/to/backtest python -m uvicorn backend.app:app -
 backend の OpenAPI schema から frontend 用 TypeScript 契約を再生成できます。
 
 ```bash
-cd python
-source .venv/bin/activate
-cd ..
-python -m backend.scripts.export_frontend_contracts
+./python/.venv/bin/python3 -m backend.scripts.export_frontend_contracts
 ```
 
 生成先:
@@ -229,7 +223,7 @@ python/output/backtest/{run_id}/
 └── charts/*.png           # 補助画像チャート
 ```
 
-初回イテレーションでは backend が `run_manifest.json` / CSV を読み、frontend が直接描画しやすい JSON（`headline_metrics`, `visualization`）へ整形して返します。ローカルで fixture や別の成果物を読みたい場合は `INVEST_OUTPUT_DIR` で参照先を切り替えてください。
+初回イテレーションでは backend が `run_manifest.json` / CSV を読み、frontend が直接描画しやすい JSON（`headline_metrics`, `visualization`）へ整形して返します。ローカルで fixture や別の成果物を読みたい場合は `MINERVILISM_OUTPUT_DIR` で参照先を切り替えてください。
 
 ビルドとテスト:
 
@@ -269,15 +263,15 @@ docker compose up --build
 docker compose up backend frontend
 ```
 
-Compose 構成では frontend が `VITE_DEV_PROXY_TARGET=http://backend:8000` を使い、backend は `/app/python/output/backtest` を `INVEST_OUTPUT_DIR` として参照します。
+Compose 構成では frontend が `VITE_DEV_PROXY_TARGET=http://backend:8000` を使い、backend は `/app/python/output/backtest` を `MINERVILISM_OUTPUT_DIR` として参照します。
 
 ## テストと検証
 
 主要な検証コマンド:
 
 ```bash
-cd python && source .venv/bin/activate && cd .. && pytest backend/tests -q
-cd python && source .venv/bin/activate && cd .. && pytest tests -q
+./python/.venv/bin/python3 -m pytest backend/tests -q
+./python/.venv/bin/python3 -m pytest tests -q
 npm --prefix frontend run build
 npm --prefix frontend run test -- --run
 npm --prefix frontend run test:coverage
@@ -299,7 +293,7 @@ npm run build
 - [docs/product-specs/index.md](docs/product-specs/index.md) - 仕様書の索引
 - [docs/generated/doc-inventory.md](docs/generated/doc-inventory.md) - 自動生成されるドキュメント在庫表
 
-ドキュメント整合性は `python scripts/check_docs.py` で検証し、機械的に更新できる索引・在庫表は `python scripts/doc_gardening.py` で再生成します。
+ドキュメント整合性は `./python/.venv/bin/python3 scripts/check_docs.py` で検証し、機械的に更新できる索引・在庫表は `./python/.venv/bin/python3 scripts/doc_gardening.py` で再生成します。
 
 ## CI / GitHub Actions
 
@@ -311,28 +305,22 @@ npm run build
 - fixture ベース E2E
 - root `npm run build`
 - `docker compose config` と `docker compose build`
-- `python scripts/check_docs.py` によるドキュメント整合性チェック
+- `./python/.venv/bin/python3 scripts/check_docs.py` によるドキュメント整合性チェック
 
 `.github/workflows/docs-governance.yml` では、push / pull_request で docs lint を実行し、schedule / workflow_dispatch では doc-gardening を走らせて差分を自動 PR 化します。
 
 契約差分をローカルで確認したい場合:
 
 ```bash
-cd python
-source .venv/bin/activate
-cd ..
-python -m backend.scripts.export_frontend_contracts
+./python/.venv/bin/python3 -m backend.scripts.export_frontend_contracts
 git diff -- frontend/src/api/generated/contracts.ts
 ```
 
 ドキュメント在庫表と索引の再生成:
 
 ```bash
-cd python
-source .venv/bin/activate
-cd ..
-python scripts/doc_gardening.py
-python scripts/check_docs.py
+./python/.venv/bin/python3 scripts/doc_gardening.py
+./python/.venv/bin/python3 scripts/check_docs.py
 ```
 
 ## 参考ドキュメント

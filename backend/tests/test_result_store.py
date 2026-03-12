@@ -76,14 +76,39 @@ def _write_manifest(
     )
 
 
-def test_get_backtest_output_dir_uses_env_override(monkeypatch, tmp_path):
+def test_get_backtest_output_dir_uses_minervilism_env_override(monkeypatch, tmp_path):
     from services.result_store import get_backtest_output_dir
 
     custom_output = tmp_path / 'custom-output'
     custom_output.mkdir()
+    monkeypatch.delenv('INVEST_OUTPUT_DIR', raising=False)
+    monkeypatch.setenv('MINERVILISM_OUTPUT_DIR', str(custom_output))
+
+    assert get_backtest_output_dir() == custom_output
+
+
+def test_get_backtest_output_dir_falls_back_to_legacy_invest_env(monkeypatch, tmp_path):
+    from services.result_store import get_backtest_output_dir
+
+    custom_output = tmp_path / 'legacy-output'
+    custom_output.mkdir()
+    monkeypatch.delenv('MINERVILISM_OUTPUT_DIR', raising=False)
     monkeypatch.setenv('INVEST_OUTPUT_DIR', str(custom_output))
 
     assert get_backtest_output_dir() == custom_output
+
+
+def test_get_backtest_output_dir_prefers_minervilism_env_when_both_are_set(monkeypatch, tmp_path):
+    from services.result_store import get_backtest_output_dir
+
+    primary_output = tmp_path / 'primary-output'
+    legacy_output = tmp_path / 'legacy-output'
+    primary_output.mkdir()
+    legacy_output.mkdir()
+    monkeypatch.setenv('MINERVILISM_OUTPUT_DIR', str(primary_output))
+    monkeypatch.setenv('INVEST_OUTPUT_DIR', str(legacy_output))
+
+    assert get_backtest_output_dir() == primary_output
 
 
 def test_result_store_lists_backtests_from_fixture_dir():

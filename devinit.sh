@@ -30,7 +30,7 @@ echo "Copilot CLI をスマホ表示向けモードで起動しています"
 readonly PYTHON_DIR="${ROOT_DIR}/python"
 readonly BACKEND_DIR="${ROOT_DIR}/backend"
 readonly FRONTEND_DIR="${ROOT_DIR}/frontend"
-readonly VENV_ACTIVATE="${PYTHON_DIR}/.venv/bin/activate"
+readonly VENV_PYTHON="${PYTHON_DIR}/.venv/bin/python3"
 readonly LOG_FILE="${ROOT_DIR}/backend.log"
 readonly FRONTEND_LOG_FILE="${ROOT_DIR}/frontend.log"
 
@@ -68,7 +68,7 @@ session_is_healthy() {
 validate_paths() {
   [[ -d "${ROOT_DIR}" ]] || die "root directory not found: ${ROOT_DIR}"
   [[ -d "${PYTHON_DIR}" ]] || die "python directory not found: ${PYTHON_DIR}"
-  [[ -f "${VENV_ACTIVATE}" ]] || die "venv activation script not found: ${VENV_ACTIVATE}"
+  [[ -x "${VENV_PYTHON}" ]] || die "venv python not found: ${VENV_PYTHON}"
   [[ -d "${BACKEND_DIR}" ]] || die "backend directory not found: ${BACKEND_DIR}"
   [[ -d "${FRONTEND_DIR}" ]] || die "frontend directory not found: ${FRONTEND_DIR}"
 }
@@ -96,9 +96,9 @@ create_layout() {
 start_commands() {
   local backend_cmd frontend_cmd copilot_cmd logs_cmd git_cmd
 
-  backend_cmd="cd ${PYTHON_DIR} && source ${VENV_ACTIVATE} && cd ${BACKEND_DIR} && while true; do python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 2>&1 | tee -a $(escape "${LOG_FILE}"); echo \"backend crashed. restarting...\"; sleep 2; done"
-  frontend_cmd="cd ${PYTHON_DIR} && source ${VENV_ACTIVATE} && cd ${FRONTEND_DIR} && while true; do npm run dev -- --host 0.0.0.0 --port 3000 --strictPort 2>&1 | tee -a $(escape "${FRONTEND_LOG_FILE}"); echo \"frontend crashed. restarting...\"; sleep 2; done"
-  copilot_cmd="cd $(escape "${PYTHON_DIR}") && source $(escape "${VENV_ACTIVATE}") && cd $(escape "${ROOT_DIR}") && copilot --yolo --add-github-mcp-toolset all --add-dir ~/code/MinerviLism"
+  backend_cmd="cd ${BACKEND_DIR} && while true; do $(escape "${VENV_PYTHON}") -m uvicorn app:app --reload --host 0.0.0.0 --port 8000 2>&1 | tee -a $(escape "${LOG_FILE}"); echo \"backend crashed. restarting...\"; sleep 2; done"
+  frontend_cmd="cd ${FRONTEND_DIR} && while true; do npm run dev -- --host 0.0.0.0 --port 3000 --strictPort 2>&1 | tee -a $(escape "${FRONTEND_LOG_FILE}"); echo \"frontend crashed. restarting...\"; sleep 2; done"
+  copilot_cmd="cd $(escape "${ROOT_DIR}") && copilot --yolo --add-github-mcp-toolset all --add-dir ~/code/MinerviLism"
   gh auth status >/dev/null 2>&1 || gh auth login --hostname github.com --git-protocol ssh --web
   logs_cmd="cd ${ROOT_DIR} && tail -F $(escape "${LOG_FILE}") $(escape "${FRONTEND_LOG_FILE}")"
   git_cmd="cd ${ROOT_DIR} && echo 'Launching lazygit...' && lazygit"

@@ -10,10 +10,10 @@ logs:
   tail -F backend.log frontend.log
 
 test:
-  cd python && source .venv/bin/activate && pytest
+  ./python/.venv/bin/python3 -m pytest
 
 lint:
-  cd python && source .venv/bin/activate && ruff check .
+  ./python/.venv/bin/python3 -m ruff check python
 
 fmt:
-  cd python && source .venv/bin/activate && ruff format .
+  ./python/.venv/bin/python3 -m ruff format python

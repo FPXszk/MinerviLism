@@ -10,7 +10,8 @@ import pandas as pd
 from loguru import logger
 
 
-OUTPUT_DIR_ENV_VAR = "INVEST_OUTPUT_DIR"
+OUTPUT_DIR_ENV_VAR = "MINERVILISM_OUTPUT_DIR"
+LEGACY_OUTPUT_DIR_ENV_VAR = "INVEST_OUTPUT_DIR"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parents[2] / "python" / "output" / "backtest"
 PINNED_BACKTEST_PERIODS = (
     "2020-01-01 to 2020-12-31",
@@ -29,6 +30,12 @@ def get_backtest_output_dir() -> Path:
     override = os.getenv(OUTPUT_DIR_ENV_VAR)
     if override:
         return Path(override).expanduser().resolve()
+    legacy_override = os.getenv(LEGACY_OUTPUT_DIR_ENV_VAR)
+    if legacy_override:
+        logger.warning(
+            f"{LEGACY_OUTPUT_DIR_ENV_VAR} is deprecated; use {OUTPUT_DIR_ENV_VAR} instead."
+        )
+        return Path(legacy_override).expanduser().resolve()
     return DEFAULT_OUTPUT_DIR
 
 

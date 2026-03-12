@@ -70,7 +70,7 @@ beforeAll(async () => {
       cwd: rootDir,
       env: {
         ...process.env,
-        INVEST_OUTPUT_DIR: fixtureOutputDir,
+        MINERVILISM_OUTPUT_DIR: fixtureOutputDir,
       },
       stdio: 'pipe',
     },

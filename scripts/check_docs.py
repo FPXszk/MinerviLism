@@ -46,10 +46,10 @@ REQUIRED_NAVIGATION_LINKS = {
     ],
 }
 REQUIRED_COMMANDS = [
-    'python scripts/check_docs.py',
-    'python scripts/doc_gardening.py',
+    './python/.venv/bin/python3 scripts/check_docs.py',
+    './python/.venv/bin/python3 scripts/doc_gardening.py',
     'pytest backend/tests --cov=backend --cov-report=term --cov-fail-under=80',
-    'python -m backend.scripts.export_frontend_contracts',
+    './python/.venv/bin/python3 -m backend.scripts.export_frontend_contracts',
     'npm --prefix frontend run build',
     'npm --prefix frontend run test:coverage',
     'npm run test:e2e',
@@ -130,7 +130,7 @@ def find_stale_managed_files(repo_root: Path) -> list[str]:
         actual_content = path.read_text(encoding='utf-8')
         if actual_content != expected_content:
             errors.append(
-                f'Managed documentation file is stale: {path.relative_to(repo_root).as_posix()}. Run python scripts/doc_gardening.py'
+                f'Managed documentation file is stale: {path.relative_to(repo_root).as_posix()}. Run ./python/.venv/bin/python3 scripts/doc_gardening.py'
             )
     return errors
 

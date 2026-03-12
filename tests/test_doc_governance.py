@@ -70,8 +70,10 @@ stale
     write_text(
         root / "COMMAND.md",
         "# COMMAND\n\n"
-        "python scripts/check_docs.py\n"
-        "python scripts/doc_gardening.py\n"
+        "./python/.venv/bin/python3 scripts/check_docs.py\n"
+        "./python/.venv/bin/python3 scripts/doc_gardening.py\n"
+        "./python/.venv/bin/python3 -m backend.scripts.export_frontend_contracts\n"
+        "pytest backend/tests --cov=backend --cov-report=term --cov-fail-under=80\n"
         "npm --prefix frontend run test:coverage\n"
         "npm run test:e2e\n"
         "npm run build\n",
@@ -151,7 +153,7 @@ def test_run_checks_reports_missing_documented_commands(tmp_path: Path) -> None:
     create_doc_repo(tmp_path)
     synchronize_docs(tmp_path)
 
-    write_text(tmp_path / "COMMAND.md", "# COMMAND\n\npython scripts/check_docs.py\n")
+    write_text(tmp_path / "COMMAND.md", "# COMMAND\n\n./python/.venv/bin/python3 scripts/check_docs.py\n")
 
     errors = run_checks(tmp_path)
 

@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.backend
     command: python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
     environment:
-      INVEST_OUTPUT_DIR: /app/python/output/backtest
+      MINERVILISM_OUTPUT_DIR: /app/python/output/backtest
     ports:
       - "8000:8000"
     volumes:
